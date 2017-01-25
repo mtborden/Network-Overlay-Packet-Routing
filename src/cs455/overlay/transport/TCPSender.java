@@ -15,12 +15,9 @@ public class TCPSender {
 		this.outputStream = new DataOutputStream(socket.getOutputStream());
 	}
 	
-	public void sendData(byte[] dataToSend, int protocolType) throws IOException
+	public void sendData(byte[] dataToSend) throws IOException
 	{
-		//String dataString = new String(dataToSend);
-		//System.out.println("TCPSender data to be sent: " + dataString);
 		int dataLength = dataToSend.length;
-		outputStream.writeInt(protocolType);
 		outputStream.writeInt(dataLength);
 		outputStream.write(dataToSend, 0, dataLength);
 		outputStream.flush();

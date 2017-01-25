@@ -9,10 +9,16 @@ public class Protocol {
 	{
 		types = new HashMap<>();
 		types.put(1, Type.REGISTER_REQUEST);
+		types.put(2, Type.REGISTRATION_RESPONSE);
+		types.put(3, Type.DEREGISTER_REQUEST);
+		types.put(4, Type.DEREGISTRATION_RESPONSE);
 	}
 	
 	private enum Type
 	{
-		REGISTER_REQUEST
+		REGISTER_REQUEST,
+		REGISTRATION_RESPONSE,
+		DEREGISTER_REQUEST,
+		DEREGISTRATION_RESPONSE
 	}
 }
