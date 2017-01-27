@@ -99,7 +99,9 @@ public class TCPReceiver implements Runnable {
 				inputStream.readFully(address, 0, addressLength);
 				senderIPAddress = new String(address);
 				senderPort = inputStream.readInt();
-				System.out.println("Registration request received from " + senderIPAddress + ":" + senderPort);
+				System.out.println("Message Type: " + protocol.types.get(type));
+				System.out.println("IP Address: " + senderIPAddress);
+				System.out.println("Port number: " + senderPort);
 				
 				MessagingNodeInfo newNode = new MessagingNodeInfo(senderIPAddress, senderPort);
 				if(this.registry.connectedNodes.contains(newNode))
@@ -131,7 +133,7 @@ public class TCPReceiver implements Runnable {
 				byte[] additionalInfo = new byte[messageLength];
 				inputStream.readFully(additionalInfo, 0, messageLength);
 				String message = new String(additionalInfo);
-				System.out.println(protocol.types.get(type));
+				System.out.println("Message type: " + protocol.types.get(type));
 				
 				//success
 				if(successOrFailure == 1)
@@ -153,7 +155,9 @@ public class TCPReceiver implements Runnable {
 				senderIPAddress = new String(address);
 				senderPort = inputStream.readInt();
 				
-				System.out.println("Deregistration request received from " + senderIPAddress + ":" + senderPort);
+				System.out.println("Message type: " + protocol.types.get(type));
+				System.out.println("Node IP address: " + senderIPAddress);
+				System.out.println("Node Port number: "+ senderPort);
 				
 				MessagingNodeInfo nodeInfo = new MessagingNodeInfo(senderIPAddress, senderPort);
 				if(!this.registry.connectedNodes.contains(nodeInfo))
@@ -176,7 +180,28 @@ public class TCPReceiver implements Runnable {
 					this.registry.sendResponse(responseArray, this.socket);
 				}
 				break;
+			//deregistration request
+			case 4:
+				//TODO: process deregistration response
+				break;
+			//receiving list of nodes
+			case 5:
+				int numberOfNodes = inputStream.readInt();
+				int listLength = inputStream.readInt();
+				byte[] nodesListArray = new byte[listLength];
+				inputStream.readFully(nodesListArray, 0, listLength);
+				String nodesList = new String(nodesListArray);
+				String[] nodesListStringArray = nodesList.split(" ");
+				System.out.println("Message type: " + protocol.types.get(type));
+				System.out.println("Number of peer messaging nodes: " + numberOfNodes);
+				for(int x = 0; x < nodesListStringArray.length; x++)
+				{
+					int nodeNum = x+1;
+					System.out.println("Messaging node" + nodeNum + ": " + nodesListStringArray[x]);
+				}
+				System.out.println();
 			default:
+				System.out.println("OTHER");
 				break;
 		}
 	}

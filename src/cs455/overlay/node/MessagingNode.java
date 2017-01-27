@@ -64,7 +64,10 @@ public class MessagingNode implements Node{
 			{
 				Socket socket = serverSocket.accept();
 				senders.add(new TCPSender(socket));
-				//receivers.add(new TCPReceiver(socket));
+				TCPReceiver receiver = new TCPReceiver(socket, protocol);
+				Thread t = new Thread(receiver);
+				t.start();
+				receivers.add(receiver);
 			}
 		} catch (IOException e) {
 			// FIXME Auto-generated catch block

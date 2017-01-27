@@ -5,12 +5,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 
 import cs455.overlay.transport.NodesWithLink;
 import cs455.overlay.transport.RegistryConsoleReader;
 import cs455.overlay.transport.TCPReceiver;
 import cs455.overlay.transport.TCPSender;
 import cs455.overlay.wireformats.Event;
+import cs455.overlay.wireformats.MessagingNodesList;
 import cs455.overlay.wireformats.Protocol;
 
 public class Registry implements Node{
@@ -77,13 +79,76 @@ public class Registry implements Node{
 		sender.sendData(responseArray);
 	}
 	
-	public void setupOverlay(int numberOfConnections)
+	public void setupOverlay(int numberOfConnections) throws IOException
 	{
 		for(int x = 0; x < connectedNodes.size(); x++)
 		{
 			overlayConnections.add(new NodesWithLink(sockets.get(x), sockets.get((x+1)%sockets.size()), 0));
 			overlayConnections.add(new NodesWithLink(sockets.get(x), sockets.get((x+2)%sockets.size()), 0));
 		}
+		
+		Random rand = new Random();
+		
+		for(int x = 0; x < overlayConnections.size(); x++)
+		{
+			NodesWithLink link = overlayConnections.get(x);
+			int randomWeight = rand.nextInt(10);
+			randomWeight++;
+			link.setWeight(randomWeight);
+		}
+		
+		sendMessagingNodes();
+		sendLinkInfo();
+	}
+	
+	private void sendMessagingNodes() throws IOException
+	{		
+		for(int x = 0; x < sockets.size(); x++)
+		{
+			MessagingNodesList list = new MessagingNodesList(this, 5, sockets.get(x));
+			byte[] message = list.getBytes();
+			sendResponse(message, sockets.get(x));
+		}
+	}
+	
+	private void sendLinkInfo()
+	{
+		for(int x = 0; x < connectedNodes.size(); x++)
+		{
+			String nodeToSendInfoAddress = connectedNodes.get(x).ipAddress;
+			int nodeToSendInfoPort = connectedNodes.get(x).portNumber;
+			
+			for(int y = 0; y < overlayConnections.size(); y++)
+			{
+				NodesWithLink link = overlayConnections.get(y);
+				if(link.getFirstNode().getInetAddress().equals(nodeToSendInfoAddress) && link.getFirstNode().getPort() == nodeToSendInfoPort)
+				{
+					//TODO: send the link info					
+				}
+			}
+		}
+	}
+	
+	public String getMessagingNodes(Socket socket)
+	{
+		String nodes = "";
+		int numberOfPeerNodes = 0;
+		for(int x = 0; x < overlayConnections.size(); x++)
+		{
+			NodesWithLink link = overlayConnections.get(x);
+			if(link.getFirstNode().getInetAddress().equals(socket.getInetAddress()) && link.getFirstNode().getPort() == socket.getPort())
+			{
+				nodes += (link.getSecondNode().getInetAddress() + ":" + link.getSecondNode().getPort() + " ");
+				numberOfPeerNodes++;
+			}
+			else if(link.getSecondNode().getInetAddress().equals(socket.getInetAddress()) && link.getSecondNode().getPort() == socket.getPort())
+			{
+				nodes += (link.getFirstNode().getInetAddress() + ":" + link.getFirstNode().getPort() + " ");
+				numberOfPeerNodes++;
+			}
+		}
+		
+		return numberOfPeerNodes + nodes;
 	}
 	
 	public static void main(String args[])
