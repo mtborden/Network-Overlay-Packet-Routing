@@ -99,11 +99,12 @@ public class TCPReceiver implements Runnable {
 				inputStream.readFully(address, 0, addressLength);
 				senderIPAddress = new String(address);
 				senderPort = inputStream.readInt();
+				int listeningPort = inputStream.readInt();
 				System.out.println("Message Type: " + protocol.types.get(type));
 				System.out.println("IP Address: " + senderIPAddress);
 				System.out.println("Port number: " + senderPort);
 				
-				MessagingNodeInfo newNode = new MessagingNodeInfo(senderIPAddress, senderPort);
+				MessagingNodeInfo newNode = new MessagingNodeInfo(senderIPAddress, senderPort, listeningPort);
 				if(this.registry.connectedNodes.contains(newNode))
 				{
 					System.out.println("Request denied. Node already connected.\n");
@@ -138,13 +139,14 @@ public class TCPReceiver implements Runnable {
 				//success
 				if(successOrFailure == 1)
 				{
-					System.out.println("SUCCESS");
+					System.out.println("Status Code: SUCCESS");
 					System.out.println(message);
 				}
 				//failure
 				else
 				{
-					System.out.println("FAILURE");
+					System.out.println("Status Code: FAILURE");
+					System.out.println(message);
 				}
 				break;
 			//deregistration request
@@ -198,10 +200,28 @@ public class TCPReceiver implements Runnable {
 				{
 					int nodeNum = x+1;
 					System.out.println("Messaging node" + nodeNum + ": " + nodesListStringArray[x]);
+					String[] addressArray = nodesListStringArray[x].split(":");
+					Socket socketToPeer = new Socket(addressArray[0].substring(1), Integer.parseInt(addressArray[1]));
+					//TODO: setup all needed construct for connection between peers
 				}
 				System.out.println();
+				break;
+			//receiving link info
+			case 6:
+				int numberOfLinks = inputStream.readInt();
+				int linksLength = inputStream.readInt();
+				byte[] linksListArray = new byte[linksLength];
+				inputStream.readFully(linksListArray, 0, linksLength);
+				String linksList = new String(linksListArray);
+				String[] linksArray = linksList.split(";");
+				System.out.println("Message type: " + protocol.types.get(type));
+				System.out.println("Number of links: " + numberOfLinks);
+				for(int x = 0; x < linksArray.length; x++)
+				{
+					System.out.println(linksArray[x]);
+				}
+				break;
 			default:
-				System.out.println("OTHER");
 				break;
 		}
 	}

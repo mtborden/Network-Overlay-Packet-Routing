@@ -12,11 +12,13 @@ public class Register implements Event {
 	private int type = 1;
 	private String ipAddress;
 	private int portNumber;
+	private int listeningPort;
 	
-	public Register(String ipAddress, int portNumber)
+	public Register(String ipAddress, int portNumber, int listeningPort)
 	{
 		this.ipAddress = ipAddress;
 		this.portNumber = portNumber;
+		this.listeningPort = listeningPort;
 	}
 	
 	@Override
@@ -37,6 +39,7 @@ public class Register implements Event {
 		outputStream.writeInt(addressLength);
 		outputStream.write(addressBytes);
 		outputStream.writeInt(portNumber);
+		outputStream.writeInt(listeningPort);
 		
 		outputStream.flush();
 		marshalledBytes = byteArrayOutputStream.toByteArray();

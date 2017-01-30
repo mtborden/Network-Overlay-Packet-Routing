@@ -6,6 +6,17 @@ public class MessagingNodeInfo {
 	public int portNumber;	
 	public int serverSocketPortNumber;
 	
+	/**
+	 * This constructor is to be used only for deregistration
+	 * @param ipAddress - ip address of the node wanting to deregister
+	 * @param portNumber - port number of the node wanting to deregister
+	 */
+	public MessagingNodeInfo(String ipAddress, int portNumber)
+	{
+		this.ipAddress = ipAddress;
+		this.portNumber = portNumber;
+	}
+	
 	public MessagingNodeInfo(String ipAddress, int portNumber, int serverSocketPortNumber)
 	{
 		this.ipAddress = ipAddress;

@@ -4,21 +4,18 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 
-import cs455.overlay.node.MessagingNodeInfo;
 import cs455.overlay.node.Registry;
 
-public class MessagingNodesList implements Event{
+public class LinkWeights implements Event {
 
-	private Registry registry;
 	private int type;
-	private MessagingNodeInfo info;
+	private Registry registry;
 	
-	public MessagingNodesList(Registry registry, int type, MessagingNodeInfo info) {
-		this.registry = registry;
+	public LinkWeights(int type, Registry registry)
+	{
 		this.type = type;
-		this.info = info;
+		this.registry = registry;
 	}
 	
 	@Override
@@ -28,20 +25,20 @@ public class MessagingNodesList implements Event{
 
 	@Override
 	public byte[] getBytes() throws IOException {
-		String nodesString = registry.getMessagingNodes(info);
-		int numberOfPeerNodes = Integer.parseInt(""+nodesString.charAt(0));
-		nodesString = nodesString.substring(1);
+
+		int numberOfLinks = registry.overlayConnections.size();
+		String linksString = registry.getLinks();
 		
 		byte[] marshalledBytes = null;
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		DataOutputStream outputStream = new DataOutputStream(new BufferedOutputStream(byteArrayOutputStream));
 		
-		byte[] nodesBytes = nodesString.getBytes();
-		int nodesLength = nodesBytes.length;		
+		byte[] linksBytes = linksString.getBytes();
+		int linksLength = linksBytes.length;		
 		outputStream.writeInt(getType());
-		outputStream.writeInt(numberOfPeerNodes);
-		outputStream.writeInt(nodesLength);
-		outputStream.write(nodesBytes);
+		outputStream.writeInt(numberOfLinks);
+		outputStream.writeInt(linksLength);
+		outputStream.write(linksBytes);
 		
 		outputStream.flush();
 		marshalledBytes = byteArrayOutputStream.toByteArray();
@@ -52,5 +49,4 @@ public class MessagingNodesList implements Event{
 		return marshalledBytes;
 	}
 
-	
 }

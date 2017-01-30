@@ -22,13 +22,20 @@ public class MessagingNode implements Node{
 	private ServerSocket serverSocket;
 	private ArrayList<TCPReceiver> receivers;
 	private ArrayList<TCPSender> senders;
-	private int listeningPort;
+	public int listeningPort;
 	private String ipAddress;
 	private int port;
 	private Protocol protocol;
 	TCPReceiver receiverForRegistry;
 	TCPSender senderToRegistry;
 	
+	/**
+	 * Constructor for MessagingNode. Sets up socket with the registry, and starts that thread, starts up server socket and starts listening for incoming connections. Automatically registers with the registry
+	 * @param hostName - registry's ip address or name, first argument from console
+	 * @param portNumber - registry's port number, second argument from console
+	 * @throws UnknownHostException
+	 * @throws IOException
+	 */
 	public MessagingNode(String hostName, int portNumber) throws UnknownHostException, IOException
 	{
 		this.socketWithRegistry = new Socket(hostName, portNumber);
@@ -39,12 +46,18 @@ public class MessagingNode implements Node{
 		receiverForRegistry = new TCPReceiver(socketWithRegistry, protocol);
 		Thread t = new Thread(receiverForRegistry);
 		t.start();
-		Register register = new Register(socketWithRegistry.getLocalAddress().toString(), socketWithRegistry.getLocalPort());
-		byte[] registrationInfo = register.getBytes();
-		senderToRegistry.sendData(registrationInfo);
+		
 		this.receivers = new ArrayList<>();
 		this.receivers.add(receiverForRegistry);
-		this.senders = new ArrayList<>();		
+		this.senders = new ArrayList<>();
+		
+		this.serverSocket = new ServerSocket(0);
+		this.listeningPort = serverSocket.getLocalPort();
+		System.out.println("Messaging node listening on port " + listeningPort);
+		
+		Register register = new Register(socketWithRegistry.getLocalAddress().toString(), socketWithRegistry.getLocalPort(), listeningPort);
+		byte[] registrationInfo = register.getBytes();
+		senderToRegistry.sendData(registrationInfo);
 	}
 	
 	@Override
@@ -53,16 +66,17 @@ public class MessagingNode implements Node{
 		
 	}
 	
+	/**
+	 * Continually listens for incoming connections. Sets up TCPReceiver to listen once connection is established
+	 */
 	private void listenForConnections()
 	{
-		try {
-			this.serverSocket = new ServerSocket(0);
-			this.listeningPort = serverSocket.getLocalPort();
-			System.out.println("Messaging node listening on port " + listeningPort);
+		try {		
 			
 			while(true)
 			{
 				Socket socket = serverSocket.accept();
+				System.out.println("GOT REQUEST FROM PEER");
 				senders.add(new TCPSender(socket));
 				TCPReceiver receiver = new TCPReceiver(socket, protocol);
 				Thread t = new Thread(receiver);
@@ -75,6 +89,10 @@ public class MessagingNode implements Node{
 		}
 	}
 	
+	/**
+	 * Deregisters the MessagingNode with the Registry
+	 * @throws IOException
+	 */
 	public void exitOverlay() throws IOException
 	{
 		Deregister deregister = new Deregister(socketWithRegistry.getLocalAddress().toString(), socketWithRegistry.getLocalPort());
@@ -87,6 +105,9 @@ public class MessagingNode implements Node{
 		//TODO: implement
 	}
 	
+	/**
+	 * Prints out if an unrecognized command is entered
+	 */
 	public void printMessagingNodeCommands()
 	{
 		System.out.println("That command is not recognized. Please try one of the following commands.");

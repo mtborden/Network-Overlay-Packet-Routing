@@ -2,13 +2,15 @@ package cs455.overlay.transport;
 
 import java.net.Socket;
 
+import cs455.overlay.node.MessagingNodeInfo;
+
 public class NodesWithLink {
 	
-	private Socket firstNode;
-	private Socket secondNode;
+	private MessagingNodeInfo firstNode;
+	private MessagingNodeInfo secondNode;
 	private int linkWeight;
 	
-	public NodesWithLink(Socket node1, Socket node2, int weight)
+	public NodesWithLink(MessagingNodeInfo node1, MessagingNodeInfo node2, int weight)
 	{
 		this.firstNode = node1;
 		this.secondNode = node2;
@@ -17,7 +19,7 @@ public class NodesWithLink {
 	
 	public String toString()
 	{
-		return this.firstNode.getInetAddress().toString() + ":" + this.firstNode.getPort() + " " + this.secondNode.getInetAddress().toString() + ":" + this.secondNode.getPort() + " " + this.linkWeight;
+		return this.firstNode.ipAddress + ":" + this.firstNode.portNumber + " " + this.secondNode.ipAddress + ":" + this.secondNode.portNumber + " " + this.linkWeight;
 	}
 	
 	public void setWeight(int weight)
@@ -25,12 +27,12 @@ public class NodesWithLink {
 		this.linkWeight = weight;
 	}
 	
-	public Socket getFirstNode()
+	public MessagingNodeInfo getFirstNode()
 	{
 		return this.firstNode;
 	}
 	
-	public Socket getSecondNode()
+	public MessagingNodeInfo getSecondNode()
 	{
 		return this.secondNode;
 	}

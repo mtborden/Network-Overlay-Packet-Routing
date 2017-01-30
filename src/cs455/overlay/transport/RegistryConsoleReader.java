@@ -49,6 +49,14 @@ private Registry registry;
 			    		}
 		    		}
 		    	}
+		    	else if(message.equals("send-overlay-link-weights"))
+		    	{
+		    		registry.sendLinkInfo();
+		    	}
+		    	else
+		    	{
+		    		//TODO: create menu for commands
+		    	}
 		      }
 		    } 
 		    catch (Exception ex) {
