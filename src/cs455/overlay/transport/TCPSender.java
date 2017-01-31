@@ -22,4 +22,9 @@ public class TCPSender {
 		outputStream.write(dataToSend, 0, dataLength);
 		outputStream.flush();
 	}
+	
+	public Socket getSocket()
+	{
+		return this.socket;
+	}
 }

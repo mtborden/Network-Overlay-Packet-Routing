@@ -21,6 +21,7 @@ public class TCPReceiver implements Runnable {
 	private Protocol protocol;
 	private DataOutputStream outputStream;
 	private Registry registry;
+	private MessagingNode messagingNode;
 	
 	//private ArrayList<MessagingNode> connectedNodes;
 	
@@ -33,11 +34,12 @@ public class TCPReceiver implements Runnable {
 	 * @param protocol - used to determine the type of message being received
 	 * @throws IOException
 	 */
-	public TCPReceiver(Socket socket, Protocol protocol) throws IOException{
+	public TCPReceiver(MessagingNode node, Socket socket, Protocol protocol) throws IOException{
 		this.socket = socket;
 		this.inputStream = new DataInputStream(socket.getInputStream());
 		this.outputStream = new DataOutputStream(socket.getOutputStream());
 		this.protocol = protocol;
+		this.messagingNode = node;
 	}
 	
 	/**
@@ -216,10 +218,7 @@ public class TCPReceiver implements Runnable {
 				String[] linksArray = linksList.split(";");
 				System.out.println("Message type: " + protocol.types.get(type));
 				System.out.println("Number of links: " + numberOfLinks);
-				for(int x = 0; x < linksArray.length; x++)
-				{
-					System.out.println(linksArray[x]);
-				}
+				this.messagingNode.setUpArrayOfLinks(linksArray);
 				break;
 			default:
 				break;

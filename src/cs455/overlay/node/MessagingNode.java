@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import cs455.overlay.dijkstra.DijkstraSocket;
 import cs455.overlay.transport.MessagingNodeConsoleReader;
 import cs455.overlay.transport.TCPReceiver;
 import cs455.overlay.transport.TCPSender;
@@ -28,6 +29,7 @@ public class MessagingNode implements Node{
 	private Protocol protocol;
 	TCPReceiver receiverForRegistry;
 	TCPSender senderToRegistry;
+	private ArrayList<DijkstraSocket> socketsForDijkstras;
 	
 	/**
 	 * Constructor for MessagingNode. Sets up socket with the registry, and starts that thread, starts up server socket and starts listening for incoming connections. Automatically registers with the registry
@@ -43,7 +45,7 @@ public class MessagingNode implements Node{
 		this.port = socketWithRegistry.getLocalPort();
 		this.protocol = new Protocol();
 		senderToRegistry = new TCPSender(socketWithRegistry);
-		receiverForRegistry = new TCPReceiver(socketWithRegistry, protocol);
+		receiverForRegistry = new TCPReceiver(this, socketWithRegistry, protocol);
 		Thread t = new Thread(receiverForRegistry);
 		t.start();
 		
@@ -58,6 +60,8 @@ public class MessagingNode implements Node{
 		Register register = new Register(socketWithRegistry.getLocalAddress().toString(), socketWithRegistry.getLocalPort(), listeningPort);
 		byte[] registrationInfo = register.getBytes();
 		senderToRegistry.sendData(registrationInfo);
+		
+		this.socketsForDijkstras = new ArrayList<>();
 	}
 	
 	@Override
@@ -78,7 +82,7 @@ public class MessagingNode implements Node{
 				Socket socket = serverSocket.accept();
 				System.out.println("GOT REQUEST FROM PEER");
 				senders.add(new TCPSender(socket));
-				TCPReceiver receiver = new TCPReceiver(socket, protocol);
+				TCPReceiver receiver = new TCPReceiver(this, socket, protocol);
 				Thread t = new Thread(receiver);
 				t.start();
 				receivers.add(receiver);
@@ -103,6 +107,23 @@ public class MessagingNode implements Node{
 	public void printShortestPath()
 	{
 		//TODO: implement
+	}
+	
+	public void setUpArrayOfLinks(String[] linksArray)
+	{
+		for(int x = 0; x < linksArray.length; x++)
+		{
+			System.out.println(linksArray[x]);
+		}
+		
+		/*System.out.println("PRINTING CURRENT CONNECTED SOCKETS");
+		for(int x = 0; x < senders.size(); x++)
+		{
+			System.out.println(senders.get(x).getSocket().getInetAddress().toString() + ":" + senders.get(x).getSocket().getPort());
+		}
+		System.out.println("END OF LIST");*/
+		
+		
 	}
 	
 	/**
