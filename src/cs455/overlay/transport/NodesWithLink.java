@@ -19,7 +19,7 @@ public class NodesWithLink {
 	
 	public String toString()
 	{
-		return this.firstNode.ipAddress + ":" + this.firstNode.portNumber + " " + this.secondNode.ipAddress + ":" + this.secondNode.portNumber + " " + this.linkWeight;
+		return this.firstNode.ipAddress + ":" + this.firstNode.serverSocketPortNumber + " " + this.secondNode.ipAddress + ":" + this.secondNode.serverSocketPortNumber + " " + this.linkWeight;
 	}
 	
 	public void setWeight(int weight)

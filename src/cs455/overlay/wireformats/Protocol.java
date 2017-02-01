@@ -14,6 +14,7 @@ public class Protocol {
 		types.put(4, Type.DEREGISTRATION_RESPONSE);
 		types.put(5, Type.MESSAGING_NODES_LIST);
 		types.put(6, Type.LINK_WEIGHTS);
+		types.put(7, Type.SOCKET_INFO);
 	}
 	
 	private enum Type
@@ -23,6 +24,7 @@ public class Protocol {
 		DEREGISTER_REQUEST,
 		DEREGISTRATION_RESPONSE,
 		MESSAGING_NODES_LIST,
-		LINK_WEIGHTS
+		LINK_WEIGHTS,
+		SOCKET_INFO
 	}
 }

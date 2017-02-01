@@ -2,7 +2,8 @@ package cs455.overlay.dijkstra;
 
 public class Connection {
 	
-	String connectedNodeWithPort;
+	public String firstNode;
+	public String secondNode;
 	public int weight;
 	
 	/**
@@ -11,9 +12,15 @@ public class Connection {
 	 * @param addressAndPort - address and port number of the connected node
 	 * @param wt - weight of the connection
 	 */
-	public Connection(String addressAndPort, int wt)
+	public Connection(String firstNode, String secondNode, int wt)
 	{
-		this.connectedNodeWithPort = addressAndPort;
+		this.firstNode = firstNode;
+		this.secondNode = secondNode;
 		this.weight = wt;
+	}
+	
+	public String toString()
+	{
+		return this.firstNode + "#" + this.secondNode + "#" + this.weight;
 	}
 }

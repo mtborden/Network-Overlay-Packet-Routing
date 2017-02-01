@@ -8,7 +8,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
-import cs455.overlay.dijkstra.DijkstraSocket;
+import cs455.overlay.dijkstra.DijkstraNode;
+import cs455.overlay.dijkstra.NodeWithDistance;
 import cs455.overlay.transport.MessagingNodeConsoleReader;
 import cs455.overlay.transport.TCPReceiver;
 import cs455.overlay.transport.TCPSender;
@@ -28,8 +29,9 @@ public class MessagingNode implements Node{
 	private int port;
 	private Protocol protocol;
 	TCPReceiver receiverForRegistry;
-	TCPSender senderToRegistry;
-	private ArrayList<DijkstraSocket> socketsForDijkstras;
+	public TCPSender senderToRegistry;
+	private ArrayList<DijkstraNode> nodesForDijkstras;
+	private ArrayList<Integer> connectedPortNumbers;
 	
 	/**
 	 * Constructor for MessagingNode. Sets up socket with the registry, and starts that thread, starts up server socket and starts listening for incoming connections. Automatically registers with the registry
@@ -61,7 +63,8 @@ public class MessagingNode implements Node{
 		byte[] registrationInfo = register.getBytes();
 		senderToRegistry.sendData(registrationInfo);
 		
-		this.socketsForDijkstras = new ArrayList<>();
+		this.nodesForDijkstras = new ArrayList<>();
+		this.connectedPortNumbers = new ArrayList<>();
 	}
 	
 	@Override
@@ -80,7 +83,8 @@ public class MessagingNode implements Node{
 			while(true)
 			{
 				Socket socket = serverSocket.accept();
-				System.out.println("GOT REQUEST FROM PEER");
+				//System.out.println("GOT REQUEST FROM PEER");
+				addConnectedPort(socket.getLocalPort());
 				senders.add(new TCPSender(socket));
 				TCPReceiver receiver = new TCPReceiver(this, socket, protocol);
 				Thread t = new Thread(receiver);
@@ -114,16 +118,56 @@ public class MessagingNode implements Node{
 		for(int x = 0; x < linksArray.length; x++)
 		{
 			System.out.println(linksArray[x]);
+			String link = linksArray[x];
+			String[] linkArray = link.split(" ");
+			String node1 = linkArray[0];
+			String[] node1Array = node1.split(":");
+			String node1Name = node1Array[0];
+			int node1Port = Integer.parseInt(node1Array[1]);
+			String node2 = linkArray[1];
+			String[] node2Array = node2.split(":");
+			String node2Name = node2Array[0];
+			int node2Port = Integer.parseInt(node2Array[1]);
+			int linkWeight = Integer.parseInt(linkArray[2]);
+			DijkstraNode nodeToAdd1 = new DijkstraNode(node1Name, node1Port);
+			DijkstraNode nodeToAdd2 = new DijkstraNode(node2Name, node2Port);			
+			
+			if(!nodesForDijkstras.contains(nodeToAdd1))
+			{
+				nodeToAdd1.connections.add(new NodeWithDistance(node2Name, node2Port, linkWeight));
+				nodesForDijkstras.add(nodeToAdd1);
+			}
+			else
+			{
+				int index = nodesForDijkstras.indexOf(nodeToAdd1);
+				DijkstraNode nodeToAddConnectionTo = nodesForDijkstras.get(index);
+				nodeToAddConnectionTo.connections.add(new NodeWithDistance(node2Name, node2Port, linkWeight));
+			}
+			if(!nodesForDijkstras.contains(nodeToAdd2))
+			{
+				nodeToAdd2.connections.add(new NodeWithDistance(node1Name, node1Port, linkWeight));
+				nodesForDijkstras.add(nodeToAdd2);
+			}		
+			else
+			{
+				int index = nodesForDijkstras.indexOf(nodeToAdd2);
+				DijkstraNode nodeToAddConnectionTo = nodesForDijkstras.get(index);
+				nodeToAddConnectionTo.connections.add(new NodeWithDistance(node1Name, node1Port, linkWeight));
+			}
 		}
-		
-		/*System.out.println("PRINTING CURRENT CONNECTED SOCKETS");
-		for(int x = 0; x < senders.size(); x++)
+		for(int x = 0; x < nodesForDijkstras.size(); x++)
 		{
-			System.out.println(senders.get(x).getSocket().getInetAddress().toString() + ":" + senders.get(x).getSocket().getPort());
+			System.out.println(nodesForDijkstras.get(x).name + ":" + nodesForDijkstras.get(x).portNumber);
 		}
-		System.out.println("END OF LIST");*/
-		
-		
+	}
+	
+	/**
+	 * adds the specified port to the list of connected ports - used in calculating Dijkstra's algorithm
+	 * @param connectedPort - the port to add
+	 */
+	public void addConnectedPort(int connectedPort)
+	{
+		this.connectedPortNumbers.add(connectedPort);
 	}
 	
 	/**

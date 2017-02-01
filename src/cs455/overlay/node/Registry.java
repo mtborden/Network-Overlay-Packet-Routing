@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import cs455.overlay.dijkstra.Connection;
 import cs455.overlay.transport.NodesWithLink;
 import cs455.overlay.transport.RegistryConsoleReader;
 import cs455.overlay.transport.TCPReceiver;
@@ -25,6 +26,8 @@ public class Registry implements Node{
 	private ArrayList<TCPReceiver> receivers;
 	private Protocol protocol;
 	public ArrayList<NodesWithLink> overlayConnections;
+	public ArrayList<Connection> connections;
+	private Random rand;
 	
 	public Registry(int portNumber)
 	{
@@ -35,6 +38,8 @@ public class Registry implements Node{
 		this.protocol = new Protocol();
 		this.sockets = new ArrayList<>();
 		this.overlayConnections = new ArrayList<>();
+		this.connections = new ArrayList<>();
+		this.rand = new Random();
 	}
 	
 	@Override
@@ -80,6 +85,11 @@ public class Registry implements Node{
 		sender.sendData(responseArray);
 	}
 	
+	/**
+	 * Sends information to each MessagingNode about which nodes it should connect to
+	 * @param numberOfConnections - disregard
+	 * @throws IOException
+	 */
 	public void setupOverlay(int numberOfConnections) throws IOException
 	{
 		for(int x = 0; x < connectedNodes.size(); x++)
@@ -125,22 +135,22 @@ public class Registry implements Node{
 		String links = "";
 		for(int x = 0; x < overlayConnections.size(); x++)
 		{
-			links = links + overlayConnections.get(x).toString() + ";";
-			
+			links = links + overlayConnections.get(x).toString() + ";";			
 		}
 		return links;
 	}
 	
 	public void sendLinkInfo() throws IOException
 	{
+		LinkWeights linkWeights = new LinkWeights(6, this);
+		byte[] message = linkWeights.getBytes();
+		
 		for(int x = 0; x < sockets.size(); x++)
-		{
-			LinkWeights linkWeights = new LinkWeights(6, this);
-			byte[] message = linkWeights.getBytes();
+		{			
 			sendResponse(message, sockets.get(x));
 		}
 		
-		for(int x = 0; x < connectedNodes.size(); x++)
+		/*for(int x = 0; x < connectedNodes.size(); x++)
 		{
 			String nodeToSendInfoAddress = connectedNodes.get(x).ipAddress;
 			int nodeToSendInfoPort = connectedNodes.get(x).portNumber;
@@ -153,16 +163,21 @@ public class Registry implements Node{
 					//TODO: send the link info					
 				}
 			}
-		}
+		}*/
 	}
 	
+	/**
+	 * Gets the nodes to which the requesting node should attempt to connect
+	 * @param info - information about the node that is requesting the information
+	 * @return the list of nodes to which it should connect
+	 */
 	public String getMessagingNodes(MessagingNodeInfo info)
 	{
 		String nodes = "";
 		int numberOfPeerNodes = 0;
 		for(int x = 0; x < overlayConnections.size(); x++)
 		{
-			NodesWithLink link = overlayConnections.get(x);
+			NodesWithLink link = overlayConnections.get(x);			
 			if(link.getFirstNode().equals(info))
 			{
 				nodes += (link.getSecondNode().ipAddress + ":" + link.getSecondNode().serverSocketPortNumber + " ");
@@ -171,6 +186,22 @@ public class Registry implements Node{
 		}
 		
 		return numberOfPeerNodes + nodes;
+	}
+	
+	public void addConnection(String linkInfo)
+	{
+		String[] twoNodes = linkInfo.split(";");
+		if(twoNodes.length == 2)
+		{
+			int connectionWeight = rand.nextInt(10);
+			connectionWeight++;
+			connections.add(new Connection(twoNodes[0], twoNodes[1], connectionWeight));
+			System.out.println("Link added");
+		}
+		else
+		{
+			System.out.println("Link information incorrect.");
+		}
 	}
 	
 	public static void main(String args[])

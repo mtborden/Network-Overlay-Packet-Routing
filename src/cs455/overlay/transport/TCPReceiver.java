@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import cs455.overlay.node.MessagingNode;
 import cs455.overlay.node.MessagingNodeInfo;
 import cs455.overlay.node.Registry;
 import cs455.overlay.wireformats.Protocol;
+import cs455.overlay.wireformats.SocketInfo;
 
 public class TCPReceiver implements Runnable {
 
@@ -94,7 +96,7 @@ public class TCPReceiver implements Runnable {
 		
 		switch(type)
 		{
-			//registration request
+			//registry receiving registration request from messaging node
 			case 1:
 				addressLength = inputStream.readInt();
 				address = new byte[addressLength];
@@ -151,7 +153,7 @@ public class TCPReceiver implements Runnable {
 					System.out.println(message);
 				}
 				break;
-			//deregistration request
+			//registry receiving deregistration request from messaging node
 			case 3:
 				addressLength = inputStream.readInt();
 				address = new byte[addressLength];
@@ -184,11 +186,11 @@ public class TCPReceiver implements Runnable {
 					this.registry.sendResponse(responseArray, this.socket);
 				}
 				break;
-			//deregistration request
+			//messaging node receiving deregistration response from registry
 			case 4:
 				//TODO: process deregistration response
 				break;
-			//receiving list of nodes
+			//messaging node receiving list of nodes to connect to
 			case 5:
 				int numberOfNodes = inputStream.readInt();
 				int listLength = inputStream.readInt();
@@ -205,10 +207,17 @@ public class TCPReceiver implements Runnable {
 					String[] addressArray = nodesListStringArray[x].split(":");
 					Socket socketToPeer = new Socket(addressArray[0].substring(1), Integer.parseInt(addressArray[1]));
 					//TODO: setup all needed construct for connection between peers
+					//String socketInfo = socketToPeer.getLocalAddress().toString() + ":" + socketToPeer.getLocalPort() + ";" + socketToPeer.getInetAddress().toString() + ":" + socketToPeer.getPort();
+					//System.out.println("SOCKET INFO: "+ socketInfo);
+					//this.messagingNode.addConnectedPort(socketToPeer.getLocalPort());
+					//System.out.println("SOCKET SETUP: " + socketInfo);
+					//SocketInfo socketInformation = new SocketInfo(socketInfo);
+					//byte[] infoToSend = socketInformation.getBytes();
+					//this.messagingNode.senderToRegistry.sendData(infoToSend);
 				}
 				System.out.println();
 				break;
-			//receiving link info
+			//messaging node receiving link info from registry to set up graph/calculate shortest paths
 			case 6:
 				int numberOfLinks = inputStream.readInt();
 				int linksLength = inputStream.readInt();
@@ -219,6 +228,14 @@ public class TCPReceiver implements Runnable {
 				System.out.println("Message type: " + protocol.types.get(type));
 				System.out.println("Number of links: " + numberOfLinks);
 				this.messagingNode.setUpArrayOfLinks(linksArray);
+				break;
+			//registry receiving information about socket that connects two nodes
+			case 7:
+				int infoLength = inputStream.readInt();
+				byte[] socketInformation = new byte[infoLength];
+				inputStream.readFully(socketInformation, 0, infoLength);
+				System.out.println(new String(socketInformation));
+				this.registry.addConnection(new String(socketInformation));
 				break;
 			default:
 				break;
