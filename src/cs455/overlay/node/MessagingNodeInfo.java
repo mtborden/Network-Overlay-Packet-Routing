@@ -39,6 +39,6 @@ public class MessagingNodeInfo {
 	
 	public String toString()
 	{
-		return ipAddress + ":" + portNumber;
+		return ipAddress + ":" + serverSocketPortNumber;
 	}
 }

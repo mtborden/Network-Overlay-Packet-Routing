@@ -33,6 +33,10 @@ public class MessagingNodeConsoleReader implements Runnable {
 		    	{
 		    		node.printShortestPath();
 		    	}
+		    	else if(message.equals("show-connected-nodes"))
+		    	{
+		    		node.showConnectedNodes();
+		    	}
 		    	else
 		    	{
 		    		node.printMessagingNodeCommands();

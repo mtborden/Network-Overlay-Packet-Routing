@@ -7,6 +7,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Set;
 
 import cs455.overlay.dijkstra.DijkstraNode;
 import cs455.overlay.dijkstra.NodeWithDistance;
@@ -16,6 +20,7 @@ import cs455.overlay.transport.TCPSender;
 import cs455.overlay.wireformats.Deregister;
 import cs455.overlay.wireformats.Event;
 import cs455.overlay.wireformats.Protocol;
+import cs455.overlay.wireformats.ReceivedLinkWeights;
 import cs455.overlay.wireformats.Register;
 
 public class MessagingNode implements Node{
@@ -23,7 +28,6 @@ public class MessagingNode implements Node{
 	private Socket socketWithRegistry;
 	private ServerSocket serverSocket;
 	private ArrayList<TCPReceiver> receivers;
-	private ArrayList<TCPSender> senders;
 	public int listeningPort;
 	private String ipAddress;
 	private int port;
@@ -32,6 +36,8 @@ public class MessagingNode implements Node{
 	public TCPSender senderToRegistry;
 	private ArrayList<DijkstraNode> nodesForDijkstras;
 	private ArrayList<Integer> connectedPortNumbers;
+	public HashMap<String, TCPSender> senders;
+	public ArrayList<Socket> receivedSockets;
 	
 	/**
 	 * Constructor for MessagingNode. Sets up socket with the registry, and starts that thread, starts up server socket and starts listening for incoming connections. Automatically registers with the registry
@@ -53,7 +59,7 @@ public class MessagingNode implements Node{
 		
 		this.receivers = new ArrayList<>();
 		this.receivers.add(receiverForRegistry);
-		this.senders = new ArrayList<>();
+		this.senders = new HashMap<String, TCPSender>();
 		
 		this.serverSocket = new ServerSocket(0);
 		this.listeningPort = serverSocket.getLocalPort();
@@ -65,6 +71,7 @@ public class MessagingNode implements Node{
 		
 		this.nodesForDijkstras = new ArrayList<>();
 		this.connectedPortNumbers = new ArrayList<>();
+		this.receivedSockets = new ArrayList<>();
 	}
 	
 	@Override
@@ -85,7 +92,9 @@ public class MessagingNode implements Node{
 				Socket socket = serverSocket.accept();
 				//System.out.println("GOT REQUEST FROM PEER");
 				addConnectedPort(socket.getLocalPort());
-				senders.add(new TCPSender(socket));
+				//System.out.println("ADDRESS FROM REQUESTER:" + socket.getInetAddress().toString() + ":" + socket.getPort());
+				//senders.put(socket.getInetAddress().toString() + ":" + socket.getPort(), new TCPSender(socket));
+				receivedSockets.add(socket);
 				TCPReceiver receiver = new TCPReceiver(this, socket, protocol);
 				Thread t = new Thread(receiver);
 				t.start();
@@ -108,16 +117,28 @@ public class MessagingNode implements Node{
 		senderToRegistry.sendData(registrationInfo);
 	}
 	
+	public void showConnectedNodes()
+	{
+		
+		for (String name: senders.keySet()){
+
+            System.out.println(name); 
+
+
+		} 
+	}
+	
 	public void printShortestPath()
 	{
 		//TODO: implement
 	}
 	
-	public void setUpArrayOfLinks(String[] linksArray)
+	public void setUpArrayOfLinks(String[] linksArray) throws IOException
 	{
 		for(int x = 0; x < linksArray.length; x++)
 		{
-			System.out.println(linksArray[x]);
+			int linkNum = x+1;
+			System.out.println("Linkinfo" + linkNum + " " + linksArray[x]);
 			String link = linksArray[x];
 			String[] linkArray = link.split(" ");
 			String node1 = linkArray[0];
@@ -155,11 +176,94 @@ public class MessagingNode implements Node{
 				nodeToAddConnectionTo.connections.add(new NodeWithDistance(node1Name, node1Port, linkWeight));
 			}
 		}
-		for(int x = 0; x < nodesForDijkstras.size(); x++)
+		calculateDijkstras();
+		/*for(int x = 0; x < nodesForDijkstras.size(); x++)
 		{
-			System.out.println(nodesForDijkstras.get(x).name + ":" + nodesForDijkstras.get(x).portNumber);
+			//System.out.println(nodesForDijkstras.get(x).name + ":" + nodesForDijkstras.get(x).portNumber);
+			DijkstraNode node = nodesForDijkstras.get(x);
+			System.out.println(node.name + ":" + node.portNumber);
+			ArrayList<NodeWithDistance> list = node.connections;
+			for(int y = 0; y < list.size(); y++)
+			{
+				NodeWithDistance nwd = list.get(y);
+				System.out.println(nwd.nodeAddress + ":" + nwd.nodePortNumber + " " + nwd.linkWeight);
+			}
+			System.out.println();
+		}*/
+		String receivedLinkWeights = "Link weights are received and processed. Ready to send messages.";
+		System.out.println(receivedLinkWeights);
+		ReceivedLinkWeights receivedWeights = new ReceivedLinkWeights(this.ipAddress.toString() + ":" + this.listeningPort + " - " + receivedLinkWeights);
+		byte[] infoToSend = receivedWeights.getBytes();
+		senderToRegistry.sendData(infoToSend);
+	}
+	
+	private void calculateDijkstras()
+	{		
+		//exploredSet has all nodes with the source node (this messaging node) at index 0
+		for(int x = 1; x < nodesForDijkstras.size(); x++)
+		{			
+			ArrayList<DijkstraNode> unexploredSet = getNodesForRunningDijkstras();
+			int unexploredSetSize = unexploredSet.size();
+			System.out.println("FINDING SHORTEST PATH " + unexploredSet.size());
+			ArrayList<DijkstraNode> exploredSet = new ArrayList<>();
+			DijkstraNode destinationNode = unexploredSet.get(x);		
+			while(unexploredSet.size() != 0)
+			{
+				Collections.sort(unexploredSet, sortByDistance);
+				DijkstraNode workingNode = unexploredSet.remove(0);
+				int workingNodeDistance = workingNode.distanceFromSource;
+				for(int i = 0; i < workingNode.connections.size(); i++)
+				{
+					String destNodeName = workingNode.connections.get(i).nodeAddress;
+					int destNodePort = workingNode.connections.get(i).nodePortNumber;
+					for(int j = 0; j < unexploredSet.size(); j++)
+					{
+						DijkstraNode nodeToCheck = unexploredSet.get(j);
+						if(nodeToCheck.name.equals(destNodeName) && nodeToCheck.portNumber == destNodePort)
+						{
+							if(nodeToCheck.distanceFromSource > workingNodeDistance + workingNode.connections.get(i).linkWeight)
+							{
+								nodeToCheck.distanceFromSource = workingNodeDistance + workingNode.connections.get(i).linkWeight;
+							}
+						}
+					}
+				}
+				exploredSet.add(workingNode);
+			}
+			System.out.println(destinationNode.portNumber + " " + destinationNode.distanceFromSource);
 		}
 	}
+	
+	private ArrayList<DijkstraNode> getNodesForRunningDijkstras()
+	{
+		ArrayList<DijkstraNode >unexploredSet = new ArrayList<>();			
+		DijkstraNode sourceNode = null;
+		for(int y = 0; y < nodesForDijkstras.size(); y++)
+		{
+			DijkstraNode node = new DijkstraNode(nodesForDijkstras.get(y));
+			//assign distance of 0 to self
+			if(node.name.equals(this.ipAddress) && node.portNumber == this.listeningPort)
+			{
+				node.distanceFromSource = 0;
+				sourceNode = node;
+			}
+			else
+			{
+				unexploredSet.add(node);
+			}				
+		}
+		//at this point, unexploredSet has all nodes
+		unexploredSet.add(0, sourceNode);
+		return unexploredSet;
+	}
+	
+	Comparator<DijkstraNode> sortByDistance = new Comparator<DijkstraNode>() {
+
+		@Override
+		public int compare(DijkstraNode o1, DijkstraNode o2) {
+			return (int) (o1.distanceFromSource - o2.distanceFromSource);
+		}		
+	};
 	
 	/**
 	 * adds the specified port to the list of connected ports - used in calculating Dijkstra's algorithm

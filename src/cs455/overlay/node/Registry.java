@@ -28,6 +28,7 @@ public class Registry implements Node{
 	public ArrayList<NodesWithLink> overlayConnections;
 	public ArrayList<Connection> connections;
 	private Random rand;
+	public int numReadyNodes;
 	
 	public Registry(int portNumber)
 	{
@@ -40,6 +41,7 @@ public class Registry implements Node{
 		this.overlayConnections = new ArrayList<>();
 		this.connections = new ArrayList<>();
 		this.rand = new Random();
+		this.numReadyNodes = 0;
 	}
 	
 	@Override
@@ -75,6 +77,16 @@ public class Registry implements Node{
 		{
 			MessagingNodeInfo info = connectedNodes.get(x);
 			System.out.println(info);
+		}
+		System.out.println();
+	}
+	
+	public void listWeights()
+	{
+		for(int x = 0; x < overlayConnections.size(); x++)
+		{
+			NodesWithLink info = overlayConnections.get(x);
+			System.out.println(info.getFirstNode().ipAddress + ":" + info.getFirstNode().serverSocketPortNumber + " " + info.getSecondNode().ipAddress + ":" + info.getSecondNode().serverSocketPortNumber + " " + info.getWeight());
 		}
 		System.out.println();
 	}
@@ -142,6 +154,7 @@ public class Registry implements Node{
 	
 	public void sendLinkInfo() throws IOException
 	{
+		System.out.println();
 		LinkWeights linkWeights = new LinkWeights(6, this);
 		byte[] message = linkWeights.getBytes();
 		
@@ -149,7 +162,6 @@ public class Registry implements Node{
 		{			
 			sendResponse(message, sockets.get(x));
 		}
-		
 		/*for(int x = 0; x < connectedNodes.size(); x++)
 		{
 			String nodeToSendInfoAddress = connectedNodes.get(x).ipAddress;

@@ -14,6 +14,7 @@ import cs455.overlay.node.MessagingNode;
 import cs455.overlay.node.MessagingNodeInfo;
 import cs455.overlay.node.Registry;
 import cs455.overlay.wireformats.Protocol;
+import cs455.overlay.wireformats.SendPortInfo;
 import cs455.overlay.wireformats.SocketInfo;
 
 public class TCPReceiver implements Runnable {
@@ -106,7 +107,7 @@ public class TCPReceiver implements Runnable {
 				int listeningPort = inputStream.readInt();
 				System.out.println("Message Type: " + protocol.types.get(type));
 				System.out.println("IP Address: " + senderIPAddress);
-				System.out.println("Port number: " + senderPort);
+				System.out.println("Port number: " + listeningPort);
 				
 				MessagingNodeInfo newNode = new MessagingNodeInfo(senderIPAddress, senderPort, listeningPort);
 				if(this.registry.connectedNodes.contains(newNode))
@@ -206,6 +207,12 @@ public class TCPReceiver implements Runnable {
 					System.out.println("Messaging node" + nodeNum + ": " + nodesListStringArray[x]);
 					String[] addressArray = nodesListStringArray[x].split(":");
 					Socket socketToPeer = new Socket(addressArray[0].substring(1), Integer.parseInt(addressArray[1]));
+					TCPSender sender = new TCPSender(socketToPeer, messagingNode);
+					//System.out.println("ADDRESS ON OTHER END: " + socketToPeer.getInetAddress().toString() + ":" + socketToPeer.getPort());
+					this.messagingNode.senders.put(socketToPeer.getInetAddress().toString() + ":" + socketToPeer.getPort(), sender);
+					SendPortInfo spi = new SendPortInfo(this.messagingNode.listeningPort, socketToPeer.getLocalAddress().toString());
+					byte[] info = spi.getBytes();
+					sender.sendData(info);
 					//TODO: setup all needed construct for connection between peers
 					//String socketInfo = socketToPeer.getLocalAddress().toString() + ":" + socketToPeer.getLocalPort() + ";" + socketToPeer.getInetAddress().toString() + ":" + socketToPeer.getPort();
 					//System.out.println("SOCKET INFO: "+ socketInfo);
@@ -236,6 +243,21 @@ public class TCPReceiver implements Runnable {
 				inputStream.readFully(socketInformation, 0, infoLength);
 				System.out.println(new String(socketInformation));
 				this.registry.addConnection(new String(socketInformation));
+				break;
+			//registry receiving confirmation that nodes are ready for rounds
+			case 8:
+				int messageLen = inputStream.readInt();
+				byte[] messageArray = new byte[messageLen];
+				inputStream.readFully(messageArray, 0, messageLen);
+				System.out.println(new String(messageArray));
+			//messaging node receiving port number info				
+			case 9:
+				int length = inputStream.readInt();
+				byte[] infoArray = new byte[length];				
+				inputStream.readFully(infoArray, 0, length);
+				String addressToStore = new String(infoArray);
+				//int index = this.messagingNode.receivedSockets.indexOf(socket);
+				this.messagingNode.senders.put(addressToStore, new TCPSender(socket));
 				break;
 			default:
 				break;

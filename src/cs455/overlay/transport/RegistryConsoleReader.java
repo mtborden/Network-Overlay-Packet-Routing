@@ -29,6 +29,10 @@ private Registry registry;
 		    	{
 		    		registry.listMessagingNodes();
 		    	}
+		    	else if(message.equals("list-weights"))
+		    	{
+		    		registry.listWeights();
+		    	}
 		    	else if(message.startsWith("setup-overlay"))
 		    	{
 		    		String[] messageArray = message.split(" ");

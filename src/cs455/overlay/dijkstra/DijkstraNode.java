@@ -21,18 +21,19 @@ public class DijkstraNode {
 		this.portNumber = portNum;
 	}
 	
-	public void relaxEdges()
+	//copy constructor
+	public DijkstraNode(DijkstraNode nodeToCopy)
 	{
-		
+		this.name = nodeToCopy.name;
+		this.distanceFromSource = nodeToCopy.distanceFromSource;
+		this.portNumber = nodeToCopy.portNumber;
+		this.connections = new ArrayList<>();
+		for(int x = 0; x < nodeToCopy.connections.size(); x++)
+		{
+			NodeWithDistance connection = nodeToCopy.connections.get(x);
+			this.connections.add(new NodeWithDistance(connection.nodeAddress, connection.nodePortNumber, connection.linkWeight));
+		}
 	}
-	
-	Comparator<DijkstraNode> sortByDistance = new Comparator<DijkstraNode>() {
-
-		@Override
-		public int compare(DijkstraNode o1, DijkstraNode o2) {
-			return (int) (o1.distanceFromSource - o2.distanceFromSource);
-		}		
-	};
 	
 	public boolean equals(Object other)
 	{
