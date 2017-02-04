@@ -16,13 +16,14 @@ import cs455.overlay.wireformats.Event;
 import cs455.overlay.wireformats.LinkWeights;
 import cs455.overlay.wireformats.MessagingNodesList;
 import cs455.overlay.wireformats.Protocol;
+import cs455.overlay.wireformats.TaskInitiate;
 
 public class Registry implements Node{
 	
 	public ArrayList<MessagingNodeInfo> connectedNodes;
 	private int portNumber;
 	private ArrayList<Socket> sockets;
-	//private ArrayList<TCPSender> senders;
+	private ArrayList<TCPSender> senders;
 	private ArrayList<TCPReceiver> receivers;
 	private Protocol protocol;
 	public ArrayList<NodesWithLink> overlayConnections;
@@ -34,7 +35,7 @@ public class Registry implements Node{
 	{
 		this.connectedNodes = new ArrayList<>();
 		this.portNumber = portNumber;
-		//this.senders = new ArrayList<>();
+		this.senders = new ArrayList<>();
 		this.receivers = new ArrayList<>();
 		this.protocol = new Protocol();
 		this.sockets = new ArrayList<>();
@@ -64,6 +65,7 @@ public class Registry implements Node{
 				t.start();
 				receivers.add(receiver);
 				sockets.add(socket);
+				senders.add(new TCPSender(socket));
 			}
 		} catch (IOException e) {
 			// FIXME Auto-generated catch block
@@ -79,6 +81,16 @@ public class Registry implements Node{
 			System.out.println(info);
 		}
 		System.out.println();
+	}
+	
+	public void startRounds(int numberOfRounds) throws IOException
+	{
+		TaskInitiate t = new TaskInitiate(numberOfRounds);
+		byte[] messageToSend = t.getBytes();
+		for(int x = 0; x < senders.size(); x++)
+		{
+			senders.get(x).sendData(messageToSend);
+		}
 	}
 	
 	public void listWeights()

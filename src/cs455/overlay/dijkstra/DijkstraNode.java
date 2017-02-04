@@ -12,6 +12,7 @@ public class DijkstraNode {
 	public String name;
 	public ArrayList<NodeWithDistance> connections;
 	public int portNumber;
+	private DijkstraNode parent;
 	
 	public DijkstraNode(String name, int portNum)
 	{
@@ -19,6 +20,7 @@ public class DijkstraNode {
 		this.distanceFromSource = Integer.MAX_VALUE;
 		this.connections = new ArrayList<>();
 		this.portNumber = portNum;
+		this.parent = null;
 	}
 	
 	//copy constructor
@@ -35,6 +37,11 @@ public class DijkstraNode {
 		}
 	}
 	
+	public String toString()
+	{
+		return this.name + ":" + this.portNumber;
+	}
+	
 	public boolean equals(Object other)
 	{
 		if(other instanceof DijkstraNode)
@@ -46,5 +53,13 @@ public class DijkstraNode {
 			}
 		}
 		return false;
+	}
+
+	public DijkstraNode getParent() {
+		return parent;
+	}
+
+	public void setParent(DijkstraNode parent) {
+		this.parent = parent;
 	}
 }

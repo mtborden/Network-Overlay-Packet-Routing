@@ -37,6 +37,10 @@ public class MessagingNodeConsoleReader implements Runnable {
 		    	{
 		    		node.showConnectedNodes();
 		    	}
+		    	else if(message.equals("print"))
+		    	{
+		    		node.printStats();
+		    	}
 		    	else
 		    	{
 		    		node.printMessagingNodeCommands();

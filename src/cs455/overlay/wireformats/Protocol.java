@@ -17,6 +17,8 @@ public class Protocol {
 		types.put(7, Type.SOCKET_INFO);
 		types.put(8, Type.RECEIVED_LINK_WEIGHTS);
 		types.put(9, Type.SEND_PORT_INFO);
+		types.put(10, Type.MESSAGE);
+		types.put(11, Type.TASK_INITIATE);
 	}
 	
 	private enum Type
@@ -29,6 +31,8 @@ public class Protocol {
 		LINK_WEIGHTS,
 		SOCKET_INFO,
 		RECEIVED_LINK_WEIGHTS,
-		SEND_PORT_INFO
+		SEND_PORT_INFO,
+		MESSAGE,
+		TASK_INITIATE
 	}
 }

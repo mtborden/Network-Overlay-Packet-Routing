@@ -53,6 +53,19 @@ private Registry registry;
 			    		}
 		    		}
 		    	}
+		    	else if(message.startsWith("start"))
+		    	{
+		    		String[] messageArray = message.split(" ");
+		    		if(messageArray.length != 2)
+		    		{
+		    			System.out.println("Proper usage: start <number of rounds>.\nPlease try again.");
+		    		}
+		    		else
+		    		{
+		    			int numRounds = Integer.parseInt(messageArray[1]);
+			    		registry.startRounds(numRounds);
+		    		}
+		    	}
 		    	else if(message.equals("send-overlay-link-weights"))
 		    	{
 		    		registry.sendLinkInfo();

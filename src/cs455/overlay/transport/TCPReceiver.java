@@ -13,6 +13,7 @@ import java.util.Arrays;
 import cs455.overlay.node.MessagingNode;
 import cs455.overlay.node.MessagingNodeInfo;
 import cs455.overlay.node.Registry;
+import cs455.overlay.wireformats.Message;
 import cs455.overlay.wireformats.Protocol;
 import cs455.overlay.wireformats.SendPortInfo;
 import cs455.overlay.wireformats.SocketInfo;
@@ -207,6 +208,7 @@ public class TCPReceiver implements Runnable {
 					System.out.println("Messaging node" + nodeNum + ": " + nodesListStringArray[x]);
 					String[] addressArray = nodesListStringArray[x].split(":");
 					Socket socketToPeer = new Socket(addressArray[0].substring(1), Integer.parseInt(addressArray[1]));
+					this.messagingNode.addReceiver(socketToPeer);
 					TCPSender sender = new TCPSender(socketToPeer, messagingNode);
 					//System.out.println("ADDRESS ON OTHER END: " + socketToPeer.getInetAddress().toString() + ":" + socketToPeer.getPort());
 					this.messagingNode.senders.put(socketToPeer.getInetAddress().toString() + ":" + socketToPeer.getPort(), sender);
@@ -258,6 +260,45 @@ public class TCPReceiver implements Runnable {
 				String addressToStore = new String(infoArray);
 				//int index = this.messagingNode.receivedSockets.indexOf(socket);
 				this.messagingNode.senders.put(addressToStore, new TCPSender(socket));
+				break;
+			//messaging node receiving actual message
+			case 10:
+				//System.out.println("MESSAGE RECEIVED");
+				int len = inputStream.readInt();
+				byte[] msgArray = new byte[len];
+				inputStream.readFully(msgArray, 0, len);
+				String pathAndInteger = new String(msgArray);
+				System.out.println("MESSAGE: " + pathAndInteger);
+				pathAndInteger = pathAndInteger.substring(1);
+				char c = pathAndInteger.charAt(0);
+				if(c == ' ')
+				{
+					//message's final destination, process accordingly
+					System.out.println("FINAL DESTINATION");
+					System.out.println();
+					this.messagingNode.numMessagesReceived++;
+					this.messagingNode.summationReceived += Integer.parseInt(pathAndInteger.substring(1));
+				}
+				else
+				{
+					//routing node, send to next routing node
+					//System.out.println("FORWARDING");
+					//System.out.println();
+					String nextIPAddress = this.messagingNode.aliasToAddress.get("" + c);
+					System.out.println("FORWARDING TO " + c);
+					Message m = new Message(pathAndInteger);
+					byte[] messageToForward = m.getBytes();
+					TCPSender senderToNextAddress = this.messagingNode.senders.get(nextIPAddress);
+					senderToNextAddress.sendData(messageToForward);
+					this.messagingNode.numMessagesRelayed++;
+				}
+				break;
+			//messaging node receiving the task initiate command
+			case 11:
+				System.out.println("Message Type: " + protocol.types.get(type));
+				int numRounds = inputStream.readInt();
+				System.out.println("Rounds: " + numRounds);
+				this.messagingNode.startRounds(numRounds);
 				break;
 			default:
 				break;
