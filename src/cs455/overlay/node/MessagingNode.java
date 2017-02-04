@@ -188,6 +188,7 @@ public class MessagingNode implements Node{
 			byte[] messageArray = m.getBytes();
 			firstSender.sendData(messageArray);
 		}
+		System.out.println("************* " + numberOfRounds);
 	}
 	
 	public void setUpArrayOfLinks(String[] linksArray) throws IOException
