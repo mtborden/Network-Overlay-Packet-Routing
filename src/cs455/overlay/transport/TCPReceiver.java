@@ -268,14 +268,14 @@ public class TCPReceiver implements Runnable {
 				byte[] msgArray = new byte[len];
 				inputStream.readFully(msgArray, 0, len);
 				String pathAndInteger = new String(msgArray);
-				System.out.println("MESSAGE: " + pathAndInteger);
+				//System.out.println("MESSAGE: " + pathAndInteger);
 				pathAndInteger = pathAndInteger.substring(1);
 				char c = pathAndInteger.charAt(0);
 				if(c == ' ')
 				{
 					//message's final destination, process accordingly
-					System.out.println("FINAL DESTINATION");
-					System.out.println();
+					//System.out.println("FINAL DESTINATION");
+					//System.out.println();
 					this.messagingNode.numMessagesReceived++;
 					this.messagingNode.summationReceived += Integer.parseInt(pathAndInteger.substring(1));
 				}
@@ -285,7 +285,7 @@ public class TCPReceiver implements Runnable {
 					//System.out.println("FORWARDING");
 					//System.out.println();
 					String nextIPAddress = this.messagingNode.aliasToAddress.get("" + c);
-					System.out.println("FORWARDING TO " + c);
+					//System.out.println("FORWARDING TO " + c);
 					Message m = new Message(pathAndInteger);
 					byte[] messageToForward = m.getBytes();
 					TCPSender senderToNextAddress = this.messagingNode.senders.get(nextIPAddress);
