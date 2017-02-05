@@ -173,6 +173,8 @@ public class MessagingNode implements Node{
 		System.out.println("Number relayed: " + numMessagesRelayed);
 		System.out.println("Sum received: " + summationReceived);
 		System.out.println("Sum sent: " + summationSent);
+		System.out.println("Num received for relay: " + receivedForRelay);
+		System.err.println("Num sent on relay: " + sentOnRelay);
 	}
 	
 	public void startRounds(int numberOfRounds) throws IOException
