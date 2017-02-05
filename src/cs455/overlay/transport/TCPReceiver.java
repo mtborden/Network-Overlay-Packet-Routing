@@ -73,8 +73,8 @@ public class TCPReceiver implements Runnable {
 		{
 			try
 			{
-				dataLength = inputStream.readInt();
-				unpackBytes(dataLength);				
+				//dataLength = inputStream.readInt();
+				unpackBytes(0);				
 			}catch(Exception e)
 			{
 				e.printStackTrace();
@@ -100,6 +100,7 @@ public class TCPReceiver implements Runnable {
 		{
 			//registry receiving registration request from messaging node
 			case 1:
+				//System.out.println("CASE 1");
 				addressLength = inputStream.readInt();
 				address = new byte[addressLength];
 				inputStream.readFully(address, 0, addressLength);
@@ -135,6 +136,7 @@ public class TCPReceiver implements Runnable {
 				break;
 			//response from registry regarding registration success or failure
 			case 2:
+				//System.out.println("CASE 2");
 				int successOrFailure = inputStream.readInt();
 				int messageLength = inputStream.readInt();
 				byte[] additionalInfo = new byte[messageLength];
@@ -157,6 +159,7 @@ public class TCPReceiver implements Runnable {
 				break;
 			//registry receiving deregistration request from messaging node
 			case 3:
+				//System.out.println("CASE 3");
 				addressLength = inputStream.readInt();
 				address = new byte[addressLength];
 				inputStream.readFully(address, 0, addressLength);
@@ -191,9 +194,11 @@ public class TCPReceiver implements Runnable {
 			//messaging node receiving deregistration response from registry
 			case 4:
 				//TODO: process deregistration response
+				//System.out.println("CASE 4");
 				break;
 			//messaging node receiving list of nodes to connect to
 			case 5:
+				//System.out.println("CASE 5");
 				int numberOfNodes = inputStream.readInt();
 				int listLength = inputStream.readInt();
 				byte[] nodesListArray = new byte[listLength];
@@ -228,6 +233,7 @@ public class TCPReceiver implements Runnable {
 				break;
 			//messaging node receiving link info from registry to set up graph/calculate shortest paths
 			case 6:
+				//System.out.println("CASE 6");
 				int numberOfLinks = inputStream.readInt();
 				int linksLength = inputStream.readInt();
 				byte[] linksListArray = new byte[linksLength];
@@ -240,6 +246,7 @@ public class TCPReceiver implements Runnable {
 				break;
 			//registry receiving information about socket that connects two nodes
 			case 7:
+				//System.out.println("CASE 7");
 				int infoLength = inputStream.readInt();
 				byte[] socketInformation = new byte[infoLength];
 				inputStream.readFully(socketInformation, 0, infoLength);
@@ -248,12 +255,15 @@ public class TCPReceiver implements Runnable {
 				break;
 			//registry receiving confirmation that nodes are ready for rounds
 			case 8:
+				//System.out.println("CASE 8");
 				int messageLen = inputStream.readInt();
 				byte[] messageArray = new byte[messageLen];
 				inputStream.readFully(messageArray, 0, messageLen);
 				System.out.println(new String(messageArray));
+				break;
 			//messaging node receiving port number info				
 			case 9:
+				//System.out.println("CASE 9");
 				int length = inputStream.readInt();
 				byte[] infoArray = new byte[length];				
 				inputStream.readFully(infoArray, 0, length);
@@ -263,7 +273,6 @@ public class TCPReceiver implements Runnable {
 				break;
 			//messaging node receiving actual message
 			case 10:
-				//System.out.println("MESSAGE RECEIVED");
 				int len = inputStream.readInt();
 				byte[] msgArray = new byte[len];
 				inputStream.readFully(msgArray, 0, len);
@@ -276,6 +285,7 @@ public class TCPReceiver implements Runnable {
 					//message's final destination, process accordingly
 					//System.out.println("FINAL DESTINATION");
 					//System.out.println();
+					//System.out.println("RECEIVED " + pathAndInteger.substring(1));
 					this.messagingNode.numMessagesReceived++;
 					this.messagingNode.summationReceived += Integer.parseInt(pathAndInteger.substring(1));
 				}
@@ -285,7 +295,7 @@ public class TCPReceiver implements Runnable {
 					//System.out.println("FORWARDING");
 					//System.out.println();
 					String nextIPAddress = this.messagingNode.aliasToAddress.get("" + c);
-					//System.out.println("FORWARDING TO " + c);
+					//System.out.println("FORWARDING " + pathAndInteger + " TO " + c + "\n");
 					Message m = new Message(pathAndInteger);
 					byte[] messageToForward = m.getBytes();
 					TCPSender senderToNextAddress = this.messagingNode.senders.get(nextIPAddress);
@@ -295,12 +305,14 @@ public class TCPReceiver implements Runnable {
 				break;
 			//messaging node receiving the task initiate command
 			case 11:
+				//System.out.println("CASE 11");
 				System.out.println("Message Type: " + protocol.types.get(type));
 				int numRounds = inputStream.readInt();
 				System.out.println("Rounds: " + numRounds);
 				this.messagingNode.startRounds(numRounds);
 				break;
 			default:
+				System.out.println("DEFAULT CASE: " + type);
 				break;
 		}
 	}
@@ -411,5 +423,10 @@ public class TCPReceiver implements Runnable {
 		}
 		
 		return marshalledBytes;
+	}
+	
+	public Socket getSocket()
+	{
+		return this.socket;
 	}
 }

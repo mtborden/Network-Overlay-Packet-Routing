@@ -28,7 +28,7 @@ public class TCPSender {
 	public void sendData(byte[] dataToSend) throws IOException
 	{
 		int dataLength = dataToSend.length;
-		outputStream.writeInt(dataLength);
+		//outputStream.writeInt(dataLength);
 		outputStream.write(dataToSend, 0, dataLength);
 		outputStream.flush();
 		//System.out.println("SENDING\n");

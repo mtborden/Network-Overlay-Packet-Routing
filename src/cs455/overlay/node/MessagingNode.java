@@ -180,15 +180,18 @@ public class MessagingNode implements Node{
 			String path = paths.get(chosenNode);
 			char c = path.charAt(0);
 			String firstNodeToSendTo = aliasToAddress.get("" + c);
-			System.out.println("Sending " + messageNumber + " to " + chosenNode + " via " + path);
-			numMessagesSent++;
-			summationSent += messageNumber;
+			//System.out.println("Sending " + messageNumber + " to " + chosenNode + " via " + path);
+			//System.out.println("x = " + x);			
 			TCPSender firstSender = senders.get(firstNodeToSendTo);
-			Message m = new Message(path + " " + messageNumber);
-			byte[] messageArray = m.getBytes();
-			firstSender.sendData(messageArray);
+			for(int y = 0; y < 5; y++)
+			{
+				summationSent += messageNumber;			
+				Message m = new Message(path + " " + messageNumber);
+				byte[] messageArray = m.getBytes();
+				firstSender.sendData(messageArray);
+				numMessagesSent++;
+			}
 		}
-		System.out.println("************* " + numberOfRounds);
 	}
 	
 	public void setUpArrayOfLinks(String[] linksArray) throws IOException
@@ -308,6 +311,44 @@ public class MessagingNode implements Node{
 			}
 			System.out.println(path + " " + destinationNode.distanceFromSource);
 			paths.put(destinationNode.toString(), path);
+		}
+		
+		System.out.println("*****ALIAS TO ADDRESS*****");
+		for(String name: aliasToAddress.keySet())
+		{
+			String key = name.toString();
+			String value = aliasToAddress.get(name).toString();
+			System.out.println(key + " " + value);
+		}
+		
+		System.out.println("*****ADDRESS TO ALIAS*****");
+		for(String name: addressToAlias.keySet())
+		{
+			String key = name.toString();
+			String value = addressToAlias.get(name).toString();
+			System.out.println(key + " " + value);
+		}
+		
+		System.out.println("*****PATHS*****");
+		for(String name: paths.keySet())
+		{
+			String key = name.toString();
+			String value = paths.get(name).toString();
+			System.out.println(key + " " + value);
+		}
+		
+		System.out.println("*****SENDERS*****");
+		for(String name: senders.keySet())
+		{
+			String key = name.toString();
+			String value = senders.get(name).getSocket().getInetAddress().toString() + ":" + senders.get(name).getSocket().getPort();
+			System.out.println("RECVS LISTENING PORT: " + key + " RECVING PORT: " + value);
+		}
+		
+		System.out.println("*****RECEIVERS*****");
+		for(int x = 0; x < receivers.size(); x++)
+		{
+			System.out.println("SENDERS PORT: " + receivers.get(x).getSocket().getInetAddress().toString() + ":" + receivers.get(x).getSocket().getLocalPort());
 		}
 	}
 	
