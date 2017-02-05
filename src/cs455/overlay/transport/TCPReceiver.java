@@ -294,6 +294,7 @@ public class TCPReceiver implements Runnable {
 					//routing node, send to next routing node
 					//System.out.println("FORWARDING");
 					//System.out.println();
+					this.messagingNode.receivedForRelay++;
 					String nextIPAddress = this.messagingNode.aliasToAddress.get("" + c);
 					//System.out.println("FORWARDING " + pathAndInteger + " TO " + c + "\n");
 					Message m = new Message(pathAndInteger);
@@ -301,6 +302,7 @@ public class TCPReceiver implements Runnable {
 					TCPSender senderToNextAddress = this.messagingNode.senders.get(nextIPAddress);
 					senderToNextAddress.sendData(messageToForward);
 					this.messagingNode.numMessagesRelayed++;
+					this.messagingNode.sentOnRelay++;
 				}
 				break;
 			//messaging node receiving the task initiate command

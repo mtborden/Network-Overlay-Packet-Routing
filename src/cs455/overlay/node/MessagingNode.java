@@ -49,6 +49,8 @@ public class MessagingNode implements Node{
 	public int summationReceived;
 	public int summationSent;
 	public int numMessagesRelayed;
+	public int receivedForRelay;
+	public int sentOnRelay;
 	
 	/**
 	 * Constructor for MessagingNode. Sets up socket with the registry, and starts that thread, starts up server socket and starts listening for incoming connections. Automatically registers with the registry
@@ -93,6 +95,8 @@ public class MessagingNode implements Node{
 		this.numMessagesSent = 0;
 		this.summationReceived = 0;
 		this.summationSent = 0;
+		this.sentOnRelay = 0;
+		this.receivedForRelay = 0;
 	}
 	
 	@Override
@@ -167,6 +171,8 @@ public class MessagingNode implements Node{
 		System.out.println("Number sent: " + numMessagesSent);
 		System.out.println("Number received: " + numMessagesReceived);
 		System.out.println("Number relayed: " + numMessagesRelayed);
+		System.out.println("Sum received: " + summationReceived);
+		System.out.println("Sum sent: " + summationSent);
 	}
 	
 	public void startRounds(int numberOfRounds) throws IOException
