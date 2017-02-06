@@ -317,11 +317,11 @@ public class MessagingNode implements Node{
 				path = addressToAlias.get(current.toString()) + path;
 				current = current.getParent();
 			}
-			System.out.println(path + " " + destinationNode.distanceFromSource);
+			//System.out.println(path + " " + destinationNode.distanceFromSource);
 			paths.put(destinationNode.toString(), path);
 		}
 		
-		System.out.println("*****ALIAS TO ADDRESS*****");
+		/*System.out.println("*****ALIAS TO ADDRESS*****");
 		for(String name: aliasToAddress.keySet())
 		{
 			String key = name.toString();
@@ -357,7 +357,7 @@ public class MessagingNode implements Node{
 		for(int x = 0; x < receivers.size(); x++)
 		{
 			System.out.println("SENDERS PORT: " + receivers.get(x).getSocket().getInetAddress().toString() + ":" + receivers.get(x).getSocket().getLocalPort());
-		}
+		}*/
 	}
 	
 	private ArrayList<DijkstraNode> getNodesForRunningDijkstras()
