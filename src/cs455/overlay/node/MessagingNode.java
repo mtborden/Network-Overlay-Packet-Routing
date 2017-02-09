@@ -24,6 +24,8 @@ import cs455.overlay.wireformats.Message;
 import cs455.overlay.wireformats.Protocol;
 import cs455.overlay.wireformats.ReceivedLinkWeights;
 import cs455.overlay.wireformats.Register;
+import cs455.overlay.wireformats.TaskComplete;
+import cs455.overlay.wireformats.TaskSummaryResponse;
 
 public class MessagingNode implements Node{
 	
@@ -200,6 +202,23 @@ public class MessagingNode implements Node{
 				numMessagesSent++;
 			}
 		}
+		TaskComplete tc = new TaskComplete(this.ipAddress + ":" + this.listeningPort);
+		byte[] messageBytes = tc.getBytes();
+		senderToRegistry.sendData(messageBytes);
+	}
+	
+	public void sendTrafficSummary() throws IOException
+	{
+		TaskSummaryResponse tsr = new TaskSummaryResponse(this.numMessagesSent, this.numMessagesReceived, this.numMessagesRelayed, this.summationSent, this.summationReceived);
+		byte[] responseArray = tsr.getBytes();
+		senderToRegistry.sendData(responseArray);
+		
+		//TODO: reset counters
+		this.numMessagesReceived = 0;
+		this.numMessagesRelayed = 0;
+		this.numMessagesSent = 0;
+		this.summationReceived = 0;
+		this.summationSent = 0;
 	}
 	
 	public void setUpArrayOfLinks(String[] linksArray) throws IOException

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Random;
 
 import cs455.overlay.dijkstra.Connection;
+import cs455.overlay.transport.NodeSummation;
 import cs455.overlay.transport.NodesWithLink;
 import cs455.overlay.transport.RegistryConsoleReader;
 import cs455.overlay.transport.TCPReceiver;
@@ -16,6 +17,7 @@ import cs455.overlay.wireformats.Event;
 import cs455.overlay.wireformats.LinkWeights;
 import cs455.overlay.wireformats.MessagingNodesList;
 import cs455.overlay.wireformats.Protocol;
+import cs455.overlay.wireformats.PullTrafficSummary;
 import cs455.overlay.wireformats.TaskInitiate;
 
 public class Registry implements Node{
@@ -30,6 +32,8 @@ public class Registry implements Node{
 	public ArrayList<Connection> connections;
 	private Random rand;
 	public int numReadyNodes;
+	public int numberOfCompletedNodes;
+	public ArrayList<NodeSummation> summations;
 	
 	public Registry(int portNumber)
 	{
@@ -43,6 +47,8 @@ public class Registry implements Node{
 		this.connections = new ArrayList<>();
 		this.rand = new Random();
 		this.numReadyNodes = 0;
+		this.numberOfCompletedNodes = 0;
+		this.summations = new ArrayList<>();
 	}
 	
 	@Override
@@ -91,6 +97,41 @@ public class Registry implements Node{
 		{
 			senders.get(x).sendData(messageToSend);
 		}
+	}
+	
+	public void sendPullTrafficMessage() throws IOException
+	{
+		PullTrafficSummary pts = new PullTrafficSummary();
+		byte[] messageToSend = pts.getBytes();
+		for(int x = 0; x < senders.size(); x++)
+		{
+			senders.get(x).sendData(messageToSend);
+		}
+	}
+	
+	public void printSummary()
+	{
+		System.out.println("\tNumber\tNumber of\tSummation of sent\tSummation of received\tNumber of");
+		System.out.println("\tof\tmessages\tmessages\tmessages\tmessages relayed");
+		System.out.println("\tmessages\treceived");
+		System.out.println("\tsent");
+		int totalSent = 0;
+		int totalReceived = 0;
+		int sumSent = 0;
+		int sumReceived = 0;
+		int totalForwarded = 0;
+		for(int x = 0; x < summations.size(); x++)
+		{
+			NodeSummation ns = summations.get(x);
+			int nodeNum = x+1;
+			System.out.println("Node " + nodeNum + "\t" + ns.numberSent + "\t" + ns.numberReceived + "\t" + ns.summationSent + "\t" + ns.summationSent + "\t" + ns.numberForwarded);
+			totalSent += ns.numberSent;
+			totalReceived += ns.numberReceived;
+			totalForwarded += ns.numberForwarded;
+			sumSent += ns.summationSent;
+			sumReceived += ns.summationReceived;
+		}
+		System.out.println("Sum\t" + totalSent + "\t" + totalReceived + "\t" + sumSent + "\t" + sumReceived + "\t" + totalForwarded);
 	}
 	
 	public void listWeights()

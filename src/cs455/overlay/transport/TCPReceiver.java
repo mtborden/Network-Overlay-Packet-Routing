@@ -87,8 +87,9 @@ public class TCPReceiver implements Runnable {
 	 * @param type - the type of request being received
 	 * @param dataLength - the length in bytes of the data being received
 	 * @throws IOException
+	 * @throws InterruptedException 
 	 */
-	private void unpackBytes(int dataLength) throws IOException
+	private void unpackBytes(int dataLength) throws IOException, InterruptedException
 	{
 		int type = inputStream.readInt();
 		int addressLength;
@@ -286,23 +287,29 @@ public class TCPReceiver implements Runnable {
 					//System.out.println("FINAL DESTINATION");
 					//System.out.println();
 					//System.out.println("RECEIVED " + pathAndInteger.substring(1));
-					this.messagingNode.numMessagesReceived++;
-					this.messagingNode.summationReceived += Integer.parseInt(pathAndInteger.substring(1));
+					synchronized (this.messagingNode) {
+						this.messagingNode.numMessagesReceived++;
+						this.messagingNode.summationReceived += Integer.parseInt(pathAndInteger.substring(1));
+					}
+					
 				}
 				else
 				{
 					//routing node, send to next routing node
 					//System.out.println("FORWARDING");
-					//System.out.println();
-					this.messagingNode.receivedForRelay++;
+					//System.out.println();					
 					String nextIPAddress = this.messagingNode.aliasToAddress.get("" + c);
 					//System.out.println("FORWARDING " + pathAndInteger + " TO " + c + "\n");
 					Message m = new Message(pathAndInteger);
 					byte[] messageToForward = m.getBytes();
 					TCPSender senderToNextAddress = this.messagingNode.senders.get(nextIPAddress);
 					senderToNextAddress.sendData(messageToForward);
-					this.messagingNode.numMessagesRelayed++;
-					this.messagingNode.sentOnRelay++;
+					synchronized (this.messagingNode) {
+						this.messagingNode.receivedForRelay++;
+						this.messagingNode.numMessagesRelayed++;
+						this.messagingNode.sentOnRelay++;
+					}
+					
 				}
 				break;
 			//messaging node receiving the task initiate command
@@ -312,6 +319,80 @@ public class TCPReceiver implements Runnable {
 				int numRounds = inputStream.readInt();
 				System.out.println("Rounds: " + numRounds);
 				this.messagingNode.startRounds(numRounds);
+				break;
+			//registry receiving TaskComplete info
+			case 12:
+				int taskCompleteLength = inputStream.readInt();
+				byte[] taskCompleteAddressArray = new byte[taskCompleteLength];
+				inputStream.readFully(taskCompleteAddressArray, 0, taskCompleteLength);
+				System.out.println("Message Type: " + protocol.types.get(type));
+				String ipAndPort = new String(taskCompleteAddressArray);
+				String[] ipAndPortArray = ipAndPort.split(":");
+				if(ipAndPortArray.length == 2)
+				{
+					System.out.println("Node IP address: " + ipAndPortArray[0]);
+					System.out.println("Node Port number: " + ipAndPortArray[1]);
+					System.out.println();
+					this.registry.numberOfCompletedNodes++;
+					if(this.registry.numberOfCompletedNodes == this.registry.connectedNodes.size())
+					{
+						//send PULL_TRAFFIC_SUMMARY message
+						Thread.sleep(20000);
+						this.registry.sendPullTrafficMessage();
+					}
+				}
+				else
+				{
+					System.out.println("ERROR PROCESSING IP AND PORT FOR TASK COMPLETE");
+				}
+				break;
+			//messaging node reciving pull traffic summary message
+			case 13:
+				this.messagingNode.sendTrafficSummary();
+				break;
+			//registry receiving summary info from messaging node
+			case 14:
+				int numberSentLength = inputStream.readInt();
+				byte[] numberSentArray = new byte[numberSentLength];
+				inputStream.readFully(numberSentArray, 0, numberSentLength);
+				String numberSentString = new String(numberSentArray);
+				System.out.println("Number sent: " + numberSentString);
+				int numberSent = Integer.parseInt(numberSentString);
+				
+				int numberReceivedLength = inputStream.readInt();
+				byte[] numberReceivedArray = new byte[numberReceivedLength];
+				inputStream.readFully(numberReceivedArray, 0, numberReceivedLength);
+				String numberReceivedString = new String(numberReceivedArray);
+				System.out.println("Number received: " + numberReceivedString);
+				int numberReceived = Integer.parseInt(numberReceivedString);
+				
+				int numberForwardedLength = inputStream.readInt();
+				byte[] numberForwardedArray = new byte[numberForwardedLength];
+				inputStream.readFully(numberForwardedArray, 0, numberForwardedLength);
+				String numberForwardedString = new String(numberForwardedArray);
+				System.out.println("Number forwarded: " + numberForwardedString);
+				int numberForwarded = Integer.parseInt(numberForwardedString);
+				
+				int summationSentLength = inputStream.readInt();
+				byte[] summationSentArray = new byte[summationSentLength];
+				inputStream.readFully(summationSentArray, 0, summationSentLength);
+				String summationSentString = new String(summationSentArray);
+				System.out.println("Sum sent: " + summationSentString);
+				int summationSent = Integer.parseInt(summationSentString);
+				
+				int summationReceivedLength = inputStream.readInt();
+				byte[] summationReceivedArray = new byte[summationReceivedLength];
+				inputStream.readFully(summationReceivedArray, 0, summationReceivedLength);
+				String summationReceivedString = new String(summationReceivedArray);
+				System.out.println("Sum received: " + summationReceivedString);
+				int summationReceived = Integer.parseInt(summationReceivedString);
+				
+				NodeSummation ns = new NodeSummation(numberSent, numberReceived, numberForwarded, summationReceived, summationSent);
+				this.registry.summations.add(ns);
+				if(this.registry.summations.size() == this.registry.connectedNodes.size())
+				{
+					this.registry.printSummary();
+				}
 				break;
 			default:
 				System.out.println("DEFAULT CASE: " + type);
