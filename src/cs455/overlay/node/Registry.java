@@ -34,6 +34,7 @@ public class Registry implements Node{
 	public int numReadyNodes;
 	public int numberOfCompletedNodes;
 	public ArrayList<NodeSummation> summations;
+	private boolean linksSetUp;
 	
 	public Registry(int portNumber)
 	{
@@ -49,6 +50,7 @@ public class Registry implements Node{
 		this.numReadyNodes = 0;
 		this.numberOfCompletedNodes = 0;
 		this.summations = new ArrayList<>();
+		this.linksSetUp = false;
 	}
 	
 	@Override
@@ -122,20 +124,33 @@ public class Registry implements Node{
 		int totalForwarded = 0;
 		for(int x = 0; x < summations.size(); x++)
 		{
-			NodeSummation ns = summations.get(x);
-			int nodeNum = x+1;
-			System.out.println("Node " + nodeNum + "\t" + ns.numberSent + "\t" + ns.numberReceived + "\t" + ns.summationSent + "\t" + ns.summationSent + "\t" + ns.numberForwarded);
-			totalSent += ns.numberSent;
-			totalReceived += ns.numberReceived;
-			totalForwarded += ns.numberForwarded;
-			sumSent += ns.summationSent;
-			sumReceived += ns.summationReceived;
-		}
+			try
+			{				
+				NodeSummation ns = summations.get(x);
+				int nodeNum = x+1;
+				System.out.println("Node " + nodeNum + "\t" + ns.numberSent + "\t" + ns.numberReceived + "\t" + ns.summationSent + "\t" + ns.summationReceived + "\t" + ns.numberForwarded);
+				totalSent += ns.numberSent;
+				totalReceived += ns.numberReceived;
+				totalForwarded += ns.numberForwarded;
+				sumSent += ns.summationSent;
+				sumReceived += ns.summationReceived;
+				
+			}catch(NullPointerException e)
+			{
+				System.out.println("Null Pointer Exception: index " + x);
+			}			
+		}	
 		System.out.println("Sum\t" + totalSent + "\t" + totalReceived + "\t" + sumSent + "\t" + sumReceived + "\t" + totalForwarded);
+		this.summations = new ArrayList<>();
+		this.numberOfCompletedNodes = 0;
 	}
 	
-	public void listWeights()
+	public void listWeights() throws IOException
 	{
+		if(!this.linksSetUp)
+		{
+			setupOverlay(4);
+		}
 		for(int x = 0; x < overlayConnections.size(); x++)
 		{
 			NodesWithLink info = overlayConnections.get(x);
@@ -157,23 +172,32 @@ public class Registry implements Node{
 	 */
 	public void setupOverlay(int numberOfConnections) throws IOException
 	{
-		for(int x = 0; x < connectedNodes.size(); x++)
+		if(!this.linksSetUp)
 		{
-			overlayConnections.add(new NodesWithLink(connectedNodes.get(x), connectedNodes.get((x+1)%connectedNodes.size()), 0));
-			overlayConnections.add(new NodesWithLink(connectedNodes.get(x), connectedNodes.get((x+2)%connectedNodes.size()), 0));
+			for(int x = 0; x < connectedNodes.size(); x++)
+			{
+				overlayConnections.add(new NodesWithLink(connectedNodes.get(x), connectedNodes.get((x+1)%connectedNodes.size()), 0));
+				overlayConnections.add(new NodesWithLink(connectedNodes.get(x), connectedNodes.get((x+2)%connectedNodes.size()), 0));
+			}
+			
+			Random rand = new Random();
+			
+			for(int x = 0; x < overlayConnections.size(); x++)
+			{
+				NodesWithLink link = overlayConnections.get(x);
+				int randomWeight = rand.nextInt(10);
+				randomWeight++;
+				link.setWeight(randomWeight);
+			}
+			
+			this.linksSetUp = true;
+			
+			sendMessagingNodes();
 		}
-		
-		Random rand = new Random();
-		
-		for(int x = 0; x < overlayConnections.size(); x++)
+		else
 		{
-			NodesWithLink link = overlayConnections.get(x);
-			int randomWeight = rand.nextInt(10);
-			randomWeight++;
-			link.setWeight(randomWeight);
+			System.out.println("OVERLAY HAS ALREADY BEEN CONSTRUCTED BY A PREVIOUS COMMAND");
 		}
-		
-		sendMessagingNodes();
 	}
 	
 	private void sendMessagingNodes() throws IOException
@@ -207,6 +231,10 @@ public class Registry implements Node{
 	
 	public void sendLinkInfo() throws IOException
 	{
+		if(!this.linksSetUp)
+		{
+			setupOverlay(4);
+		}
 		System.out.println();
 		LinkWeights linkWeights = new LinkWeights(6, this);
 		byte[] message = linkWeights.getBytes();

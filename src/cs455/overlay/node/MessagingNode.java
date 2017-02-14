@@ -53,6 +53,7 @@ public class MessagingNode implements Node{
 	public int numMessagesRelayed;
 	public int receivedForRelay;
 	public int sentOnRelay;
+	private boolean linkWeightsReceived;
 	
 	/**
 	 * Constructor for MessagingNode. Sets up socket with the registry, and starts that thread, starts up server socket and starts listening for incoming connections. Automatically registers with the registry
@@ -99,6 +100,8 @@ public class MessagingNode implements Node{
 		this.summationSent = 0;
 		this.sentOnRelay = 0;
 		this.receivedForRelay = 0;
+		
+		this.linkWeightsReceived = false;
 	}
 	
 	@Override
@@ -165,7 +168,14 @@ public class MessagingNode implements Node{
 	
 	public void printShortestPath()
 	{
-		//TODO: implement
+		if(linkWeightsReceived)
+		{
+			
+		}
+		else
+		{
+			System.out.println("LINK WEIGHTS HAVE NOT BEEN RECEIVED FROM REGISTRY, SHORTEST PATHS HAVE NOT BEEN CALCULATED");
+		}
 	}
 	
 	public void printStats()
@@ -293,6 +303,7 @@ public class MessagingNode implements Node{
 		ReceivedLinkWeights receivedWeights = new ReceivedLinkWeights(this.ipAddress.toString() + ":" + this.listeningPort + " - " + receivedLinkWeights);
 		byte[] infoToSend = receivedWeights.getBytes();
 		senderToRegistry.sendData(infoToSend);
+		linkWeightsReceived = true;
 	}
 	
 	private void calculateDijkstras()
@@ -338,6 +349,34 @@ public class MessagingNode implements Node{
 			}
 			//System.out.println(path + " " + destinationNode.distanceFromSource);
 			paths.put(destinationNode.toString(), path);
+			String pathToAdd = this.ipAddress + ":" + this.listeningPort + "--";
+			for(int y = 0; y < path.length()-1; y++)
+			{
+				String fromIpAddressToAddToPath = aliasToAddress.get(path.charAt(y));
+				String[] fromAddressArray = fromIpAddressToAddToPath.split(":");
+				String actualFromAddress = fromAddressArray[0];
+				int actualFromPort = Integer.parseInt(fromAddressArray[1]);
+				
+				String toIpAddressToAddToPath = aliasToAddress.get(path.charAt(y));
+				String[] toAddressArray = toIpAddressToAddToPath.split(":");
+				String actualToAddress = toAddressArray[0];
+				int actualToPort = Integer.parseInt(toAddressArray[1]);
+				
+				for(int z = 0; z < nodesForDijkstras.size(); z++)
+				{
+					if(nodesForDijkstras.get(z).name.equals(actualFromAddress) && nodesForDijkstras.get(z).portNumber == actualFromPort)
+					{
+						DijkstraNode fromNode = nodesForDijkstras.get(z);
+						for(int i = 0; i < fromNode.connections.size(); i++)
+						{
+							if(fromNode.connections.get(i).nodeAddress.equals(actualToAddress) && fromNode.connections.get(i).nodePortNumber == actualToPort)
+							{
+								
+							}
+						}
+					}
+				}
+			}
 		}
 		
 		/*System.out.println("*****ALIAS TO ADDRESS*****");

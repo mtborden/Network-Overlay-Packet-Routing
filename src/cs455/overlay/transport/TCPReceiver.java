@@ -356,39 +356,42 @@ public class TCPReceiver implements Runnable {
 				byte[] numberSentArray = new byte[numberSentLength];
 				inputStream.readFully(numberSentArray, 0, numberSentLength);
 				String numberSentString = new String(numberSentArray);
-				System.out.println("Number sent: " + numberSentString);
+				//System.out.println("Number sent: " + numberSentString);
 				int numberSent = Integer.parseInt(numberSentString);
 				
 				int numberReceivedLength = inputStream.readInt();
 				byte[] numberReceivedArray = new byte[numberReceivedLength];
 				inputStream.readFully(numberReceivedArray, 0, numberReceivedLength);
 				String numberReceivedString = new String(numberReceivedArray);
-				System.out.println("Number received: " + numberReceivedString);
+				//System.out.println("Number received: " + numberReceivedString);
 				int numberReceived = Integer.parseInt(numberReceivedString);
 				
 				int numberForwardedLength = inputStream.readInt();
 				byte[] numberForwardedArray = new byte[numberForwardedLength];
 				inputStream.readFully(numberForwardedArray, 0, numberForwardedLength);
 				String numberForwardedString = new String(numberForwardedArray);
-				System.out.println("Number forwarded: " + numberForwardedString);
+				//System.out.println("Number forwarded: " + numberForwardedString);
 				int numberForwarded = Integer.parseInt(numberForwardedString);
 				
 				int summationSentLength = inputStream.readInt();
 				byte[] summationSentArray = new byte[summationSentLength];
 				inputStream.readFully(summationSentArray, 0, summationSentLength);
 				String summationSentString = new String(summationSentArray);
-				System.out.println("Sum sent: " + summationSentString);
+				//System.out.println("Sum sent: " + summationSentString);
 				int summationSent = Integer.parseInt(summationSentString);
 				
 				int summationReceivedLength = inputStream.readInt();
 				byte[] summationReceivedArray = new byte[summationReceivedLength];
 				inputStream.readFully(summationReceivedArray, 0, summationReceivedLength);
 				String summationReceivedString = new String(summationReceivedArray);
-				System.out.println("Sum received: " + summationReceivedString);
+				//System.out.println("Sum received: " + summationReceivedString);
 				int summationReceived = Integer.parseInt(summationReceivedString);
 				
 				NodeSummation ns = new NodeSummation(numberSent, numberReceived, numberForwarded, summationReceived, summationSent);
-				this.registry.summations.add(ns);
+				synchronized (this.registry.summations) 
+				{
+					this.registry.summations.add(ns);
+				}
 				if(this.registry.summations.size() == this.registry.connectedNodes.size())
 				{
 					this.registry.printSummary();
