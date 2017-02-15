@@ -11,10 +11,10 @@ public class NodeSummation {
 	public int numberSent;
 	public int numberReceived;
 	public int numberForwarded;
-	public int summationReceived;
-	public int summationSent;
+	public long summationReceived;
+	public long summationSent;
 	
-	public NodeSummation(int numSent, int numReceived, int numForwarded, int sumReceived, int sumSent)
+	public NodeSummation(int numSent, int numReceived, int numForwarded, long sumReceived, long sumSent)
 	{
 		this.numberSent = numSent;
 		this.numberReceived = numReceived;

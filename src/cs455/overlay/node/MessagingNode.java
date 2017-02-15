@@ -46,14 +46,18 @@ public class MessagingNode implements Node{
 	public HashMap<String, String> addressToAlias;
 	public HashMap<String, String> paths;
 	public ArrayList<String> nodesEntered;
-	public int numMessagesReceived;
-	public int numMessagesSent;
-	public int summationReceived;
-	public int summationSent;
-	public int numMessagesRelayed;
+	public int receiveTracker;
+	public int sendTracker;
+	public long receiveSummation;
+	public long sendSummation;
+	public int relayTracker;
 	public int receivedForRelay;
 	public int sentOnRelay;
 	private boolean linkWeightsReceived;
+	public HashMap<Socket, Thread> socketsToThreads;
+	private boolean disconnect;
+	private boolean exited;
+	private ArrayList<String> pathsToBePrinted;
 	
 	/**
 	 * Constructor for MessagingNode. Sets up socket with the registry, and starts that thread, starts up server socket and starts listening for incoming connections. Automatically registers with the registry
@@ -65,7 +69,7 @@ public class MessagingNode implements Node{
 	public MessagingNode(String hostName, int portNumber) throws UnknownHostException, IOException
 	{
 		this.socketWithRegistry = new Socket(hostName, portNumber);
-		this.ipAddress = socketWithRegistry.getLocalAddress().toString();
+		this.ipAddress = socketWithRegistry.getLocalAddress().getHostName().toString();
 		this.port = socketWithRegistry.getLocalPort();
 		this.protocol = new Protocol();
 		senderToRegistry = new TCPSender(socketWithRegistry);
@@ -81,7 +85,7 @@ public class MessagingNode implements Node{
 		this.listeningPort = serverSocket.getLocalPort();
 		System.out.println("Messaging node listening on port " + listeningPort);
 		
-		Register register = new Register(socketWithRegistry.getLocalAddress().toString(), socketWithRegistry.getLocalPort(), listeningPort);
+		Register register = new Register(socketWithRegistry.getLocalAddress().getHostName().toString(), socketWithRegistry.getLocalPort(), listeningPort);
 		byte[] registrationInfo = register.getBytes();
 		senderToRegistry.sendData(registrationInfo);
 		
@@ -93,15 +97,19 @@ public class MessagingNode implements Node{
 		this.nodesEntered = new ArrayList<>();
 		this.paths = new HashMap<>();
 		
-		this.numMessagesReceived = 0;
-		this.numMessagesRelayed = 0;
-		this.numMessagesSent = 0;
-		this.summationReceived = 0;
-		this.summationSent = 0;
+		this.receiveTracker = 0;
+		this.relayTracker = 0;
+		this.sendTracker = 0;
+		this.receiveSummation = 0;
+		this.sendSummation = 0;
 		this.sentOnRelay = 0;
 		this.receivedForRelay = 0;
 		
 		this.linkWeightsReceived = false;
+		this.socketsToThreads = new HashMap<>();
+		this.disconnect = false;
+		this.exited = false;
+		this.pathsToBePrinted = new ArrayList<>();
 	}
 	
 	@Override
@@ -117,7 +125,7 @@ public class MessagingNode implements Node{
 	{
 		try {		
 			
-			while(true)
+			while(true && !disconnect)
 			{
 				Socket socket = serverSocket.accept();
 				//System.out.println("GOT REQUEST FROM PEER");
@@ -127,6 +135,7 @@ public class MessagingNode implements Node{
 				receivedSockets.add(socket);
 				TCPReceiver receiver = new TCPReceiver(this, socket, protocol);
 				Thread t = new Thread(receiver);
+				socketsToThreads.put(socket, t);
 				t.start();
 				receivers.add(receiver);
 			}
@@ -142,9 +151,22 @@ public class MessagingNode implements Node{
 	 */
 	public void exitOverlay() throws IOException
 	{
-		Deregister deregister = new Deregister(socketWithRegistry.getLocalAddress().toString(), socketWithRegistry.getLocalPort());
-		byte[] registrationInfo = deregister.getBytes();
-		senderToRegistry.sendData(registrationInfo);
+		if(!exited)
+		{
+			Deregister deregister = new Deregister(socketWithRegistry.getLocalAddress().getHostName().toString(), socketWithRegistry.getLocalPort(), this.listeningPort);
+			byte[] registrationInfo = deregister.getBytes();
+			senderToRegistry.sendData(registrationInfo);
+			exited = true;
+		}
+		else
+		{
+			System.out.println("This messaging node has already exited the overlay.");
+		}
+	}
+	
+	public void stopProcess()
+	{
+		disconnect = true;
 	}
 	
 	public void showConnectedNodes()
@@ -170,7 +192,10 @@ public class MessagingNode implements Node{
 	{
 		if(linkWeightsReceived)
 		{
-			
+			for(int x = 0; x < pathsToBePrinted.size(); x++)
+			{
+				System.out.println(pathsToBePrinted.get(x));
+			}
 		}
 		else
 		{
@@ -180,55 +205,62 @@ public class MessagingNode implements Node{
 	
 	public void printStats()
 	{
-		System.out.println("Number sent: " + numMessagesSent);
-		System.out.println("Number received: " + numMessagesReceived);
-		System.out.println("Number relayed: " + numMessagesRelayed);
-		System.out.println("Sum received: " + summationReceived);
-		System.out.println("Sum sent: " + summationSent);
+		System.out.println("Number sent: " + sendTracker);
+		System.out.println("Number received: " + receiveTracker);
+		System.out.println("Number relayed: " + relayTracker);
+		System.out.println("Sum received: " + receiveSummation);
+		System.out.println("Sum sent: " + sendSummation);
 		System.out.println("Num received for relay: " + receivedForRelay);
 		System.err.println("Num sent on relay: " + sentOnRelay);
 	}
 	
 	public void startRounds(int numberOfRounds) throws IOException
 	{
-		Random rand = new Random();
-		for(int x = 0; x < numberOfRounds; x++)
+		if(linkWeightsReceived)
 		{
-			int randomIndex = rand.nextInt(nodesEntered.size());
-			String chosenNode = nodesEntered.get(randomIndex);
-			int messageNumber = rand.nextInt();
-			String path = paths.get(chosenNode);
-			char c = path.charAt(0);
-			String firstNodeToSendTo = aliasToAddress.get("" + c);
-			//System.out.println("Sending " + messageNumber + " to " + chosenNode + " via " + path);
-			//System.out.println("x = " + x);			
-			TCPSender firstSender = senders.get(firstNodeToSendTo);
-			for(int y = 0; y < 5; y++)
+			Random rand = new Random();
+			for(int x = 0; x < numberOfRounds; x++)
 			{
-				summationSent += messageNumber;			
-				Message m = new Message(path + " " + messageNumber);
-				byte[] messageArray = m.getBytes();
-				firstSender.sendData(messageArray);
-				numMessagesSent++;
+				int randomIndex = rand.nextInt(nodesEntered.size());
+				String chosenNode = nodesEntered.get(randomIndex);
+				int messageNumber = rand.nextInt();
+				String path = paths.get(chosenNode);
+				char c = path.charAt(0);
+				String firstNodeToSendTo = aliasToAddress.get("" + c);
+				//System.out.println("Sending " + messageNumber + " to " + chosenNode + " via " + path);
+				//System.out.println("x = " + x);			
+				TCPSender firstSender = senders.get(firstNodeToSendTo);
+				for(int y = 0; y < 5; y++)
+				{
+					sendSummation += (long)messageNumber;			
+					Message m = new Message(path + " " + messageNumber);
+					byte[] messageArray = m.getBytes();
+					firstSender.sendData(messageArray);
+					sendTracker++;
+				}
 			}
+			TaskComplete tc = new TaskComplete(this.ipAddress + ":" + this.listeningPort);
+			byte[] messageBytes = tc.getBytes();
+			senderToRegistry.sendData(messageBytes);
 		}
-		TaskComplete tc = new TaskComplete(this.ipAddress + ":" + this.listeningPort);
-		byte[] messageBytes = tc.getBytes();
-		senderToRegistry.sendData(messageBytes);
+		else
+		{
+			System.out.println("CANNOT START ROUNDS, LINK WEIGHTS HAVE NOT BEEN RECEIVED. PLEASE SEND LINK WEIGHTS FROM REGISTRY.");
+		}
 	}
 	
 	public void sendTrafficSummary() throws IOException
 	{
-		TaskSummaryResponse tsr = new TaskSummaryResponse(this.numMessagesSent, this.numMessagesReceived, this.numMessagesRelayed, this.summationSent, this.summationReceived);
+		TaskSummaryResponse tsr = new TaskSummaryResponse(this.sendTracker, this.receiveTracker, this.relayTracker, this.sendSummation, this.receiveSummation);
 		byte[] responseArray = tsr.getBytes();
 		senderToRegistry.sendData(responseArray);
 		
 		//TODO: reset counters
-		this.numMessagesReceived = 0;
-		this.numMessagesRelayed = 0;
-		this.numMessagesSent = 0;
-		this.summationReceived = 0;
-		this.summationSent = 0;
+		this.receiveTracker = 0;
+		this.relayTracker = 0;
+		this.sendTracker = 0;
+		this.receiveSummation = 0;
+		this.sendSummation = 0;
 	}
 	
 	public void setUpArrayOfLinks(String[] linksArray) throws IOException
@@ -341,15 +373,27 @@ public class MessagingNode implements Node{
 				exploredSet.add(workingNode);
 			}
 			DijkstraNode current = destinationNode;
+			DijkstraNode parent = current.getParent();
 			String path = "";
+			String pathWithHyphens = current.name + ":" + current.portNumber;
 			while(!current.equals(sourceNode))
 			{
 				path = addressToAlias.get(current.toString()) + path;
+				for(int y = 0; y < parent.connections.size(); y++)
+				{
+					NodeWithDistance nwd = parent.connections.get(y);
+					if(nwd.nodeAddress.equals(current.name) && nwd.nodePortNumber == current.portNumber)
+					{
+						pathWithHyphens = parent.name + ":" + parent.portNumber + "--" + nwd.linkWeight + "--" + pathWithHyphens;
+						System.out.println(pathWithHyphens);
+					}
+				}
 				current = current.getParent();
 			}
 			//System.out.println(path + " " + destinationNode.distanceFromSource);
+			pathsToBePrinted.add(pathWithHyphens);
 			paths.put(destinationNode.toString(), path);
-			String pathToAdd = this.ipAddress + ":" + this.listeningPort + "--";
+			/*String pathToAdd = this.ipAddress + ":" + this.listeningPort + "--";
 			for(int y = 0; y < path.length()-1; y++)
 			{
 				String fromIpAddressToAddToPath = aliasToAddress.get(path.charAt(y));
@@ -376,7 +420,7 @@ public class MessagingNode implements Node{
 						}
 					}
 				}
-			}
+			}*/
 		}
 		
 		/*System.out.println("*****ALIAS TO ADDRESS*****");
@@ -478,7 +522,7 @@ public class MessagingNode implements Node{
 	 */
 	public boolean equals(String address, int portNumber)
 	{
-		if(this.socketWithRegistry.getLocalAddress().toString().equals(address) && this.socketWithRegistry.getLocalPort() == portNumber)
+		if(this.socketWithRegistry.getLocalAddress().getHostName().toString().equals(address) && this.socketWithRegistry.getLocalPort() == portNumber)
 		{
 			return true;
 		}

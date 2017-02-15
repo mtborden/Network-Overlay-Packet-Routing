@@ -17,10 +17,10 @@ public class TaskSummaryResponse implements Event {
 	private int numberSent;
 	private int numberReceived;
 	private int numberForwarded;
-	private int summationSent;
-	private int summationReceived;
+	private long summationSent;
+	private long summationReceived;
 	
-	public TaskSummaryResponse(int numSent, int numReceived, int numForwarded, int sumSent, int sumReceived) {
+	public TaskSummaryResponse(int numSent, int numReceived, int numForwarded, long sumSent, long sumReceived) {
 		this.numberSent = numSent;
 		this.numberReceived = numReceived;
 		this.numberForwarded = numForwarded;

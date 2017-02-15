@@ -35,6 +35,7 @@ public class Registry implements Node{
 	public int numberOfCompletedNodes;
 	public ArrayList<NodeSummation> summations;
 	private boolean linksSetUp;
+	public HashMap<Socket, Thread> socketToThread;
 	
 	public Registry(int portNumber)
 	{
@@ -51,6 +52,7 @@ public class Registry implements Node{
 		this.numberOfCompletedNodes = 0;
 		this.summations = new ArrayList<>();
 		this.linksSetUp = false;
+		this.socketToThread = new HashMap<>();
 	}
 	
 	@Override
@@ -70,6 +72,7 @@ public class Registry implements Node{
 				//System.out.println("*******" + socket.getInetAddress().getHostAddress());
 				TCPReceiver receiver = new TCPReceiver(socket, protocol, this);
 				Thread t = new Thread(receiver);
+				socketToThread.put(socket, t);
 				t.start();
 				receivers.add(receiver);
 				sockets.add(socket);

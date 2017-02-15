@@ -37,6 +37,19 @@ public class MessagingNodeInfo {
 		return false;
 	}
 	
+	public boolean equalsUsingServerSocketPort(Object o)
+	{
+		if(o instanceof MessagingNodeInfo)
+		{
+			MessagingNodeInfo otherNode = (MessagingNodeInfo)o;
+			if(otherNode.ipAddress.equals(this.ipAddress) && otherNode.serverSocketPortNumber == this.serverSocketPortNumber)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public String toString()
 	{
 		return ipAddress + ":" + serverSocketPortNumber;

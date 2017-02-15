@@ -166,36 +166,65 @@ public class TCPReceiver implements Runnable {
 				inputStream.readFully(address, 0, addressLength);
 				senderIPAddress = new String(address);
 				senderPort = inputStream.readInt();
+				int listenPort = inputStream.readInt();
 				
-				System.out.println("Message type: " + protocol.types.get(type));
-				System.out.println("Node IP address: " + senderIPAddress);
-				System.out.println("Node Port number: "+ senderPort);
+				System.out.println("Address: " + senderIPAddress + " Port: " + + senderPort);
 				
-				MessagingNodeInfo nodeInfo = new MessagingNodeInfo(senderIPAddress, senderPort);
-				if(!this.registry.connectedNodes.contains(nodeInfo))
+				MessagingNodeInfo nodeInfo = new MessagingNodeInfo(senderIPAddress, senderPort, listenPort);
+				boolean contains = false;
+				for(int x = 0; x < this.registry.connectedNodes.size(); x++)
 				{
+					if(this.registry.connectedNodes.get(x).equalsUsingServerSocketPort(nodeInfo));
+					contains = true;
+				}
+				if(!contains)
+				{
+					System.out.println("Message type: " + protocol.types.get(type));
+					System.out.println("Node IP address: " + senderIPAddress);
+					System.out.println("Node Port number: "+ nodeInfo.serverSocketPortNumber);
 					System.out.println("Request denied. Node was not registered with the registry.\n");
 					byte[] responseArray = getBytesForDeregistrationResponse(FAILURE, "Deregistration request failure. This node is not registered with the registry.");
 					this.registry.sendResponse(responseArray, this.socket);
 				}
 				else if(!this.socket.getInetAddress().toString().equals(senderIPAddress))
 				{
+					System.out.println("Message type: " + protocol.types.get(type));
+					System.out.println("Node IP address: " + senderIPAddress);
+					System.out.println("Node Port number: "+ nodeInfo.serverSocketPortNumber);
 					System.out.println("Request denied. There was a mismatch in the addresses.\n");
 					byte[] responseArray = getBytesForDeregistrationResponse(FAILURE, "Deregistration request failure. There was a mismatch in the addresses.");
 					this.registry.sendResponse(responseArray, this.socket);
 				}
 				else
 				{
+					System.out.println("Message type: " + protocol.types.get(type));
+					System.out.println("Node IP address: " + senderIPAddress);
+					System.out.println("Node Port number: "+ nodeInfo.serverSocketPortNumber);
 					this.registry.connectedNodes.remove(nodeInfo);
 					System.out.println("Request accepted. There are now " + this.registry.connectedNodes.size() + " nodes connected.\n");
 					byte[] responseArray = getBytesForDeregistrationResponse(SUCCESS, null);
 					this.registry.sendResponse(responseArray, this.socket);
+					socket = null;
 				}
 				break;
 			//messaging node receiving deregistration response from registry
 			case 4:
 				//TODO: process deregistration response
-				//System.out.println("CASE 4");
+				int successful = inputStream.readInt();
+				int messLen = inputStream.readInt();
+				byte[] messArr = new byte[messLen];
+				inputStream.readFully(messArr, 0, messLen);
+				String messStr = new String(messArr);
+				System.out.println(protocol.types.get(type));
+				System.out.println(messStr);
+				
+				if(successful == 1)
+				{
+					//successful deregistration					
+					//TODO: stop thread, etc.
+					this.messagingNode.stopProcess();
+					socket = null;
+				}
 				break;
 			//messaging node receiving list of nodes to connect to
 			case 5:
@@ -288,8 +317,8 @@ public class TCPReceiver implements Runnable {
 					//System.out.println();
 					//System.out.println("RECEIVED " + pathAndInteger.substring(1));
 					synchronized (this.messagingNode) {
-						this.messagingNode.numMessagesReceived++;
-						this.messagingNode.summationReceived += Integer.parseInt(pathAndInteger.substring(1));
+						this.messagingNode.receiveTracker++;
+						this.messagingNode.receiveSummation += Long.parseLong(pathAndInteger.substring(1));
 					}
 					
 				}
@@ -305,9 +334,9 @@ public class TCPReceiver implements Runnable {
 					TCPSender senderToNextAddress = this.messagingNode.senders.get(nextIPAddress);
 					senderToNextAddress.sendData(messageToForward);
 					synchronized (this.messagingNode) {
-						this.messagingNode.receivedForRelay++;
-						this.messagingNode.numMessagesRelayed++;
-						this.messagingNode.sentOnRelay++;
+						//this.messagingNode.receivedForRelay++;
+						this.messagingNode.relayTracker++;
+						//this.messagingNode.sentOnRelay++;
 					}
 					
 				}
@@ -378,14 +407,14 @@ public class TCPReceiver implements Runnable {
 				inputStream.readFully(summationSentArray, 0, summationSentLength);
 				String summationSentString = new String(summationSentArray);
 				//System.out.println("Sum sent: " + summationSentString);
-				int summationSent = Integer.parseInt(summationSentString);
+				long summationSent = Long.parseLong(summationSentString);
 				
 				int summationReceivedLength = inputStream.readInt();
 				byte[] summationReceivedArray = new byte[summationReceivedLength];
 				inputStream.readFully(summationReceivedArray, 0, summationReceivedLength);
 				String summationReceivedString = new String(summationReceivedArray);
 				//System.out.println("Sum received: " + summationReceivedString);
-				int summationReceived = Integer.parseInt(summationReceivedString);
+				long summationReceived = Long.parseLong(summationReceivedString);
 				
 				NodeSummation ns = new NodeSummation(numberSent, numberReceived, numberForwarded, summationReceived, summationSent);
 				synchronized (this.registry.summations) 
@@ -435,11 +464,11 @@ public class TCPReceiver implements Runnable {
 		//failure on deregistration
 		else
 		{
-			//write 4 for message type(DEREGISTRATIOIN_RESPONSE)
+			//write 4 for message type(DEREGISTRATION_RESPONSE)
 			outputStream.writeInt(4);
 			
 			//write 2 for failure
-			outputStream.writeInt(1);
+			outputStream.writeInt(2);
 			
 			byte[] additionalInfo = reasonForFailure.getBytes();
 			int additionalInfoLength = additionalInfo.length;
