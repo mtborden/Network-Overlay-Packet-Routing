@@ -91,7 +91,7 @@ public class Registry implements Node{
 		for(int x = 0; x < connectedNodes.size(); x++)
 		{
 			MessagingNodeInfo info = connectedNodes.get(x);
-			System.out.println(info);
+			System.out.println(addressToName.get(info.ipAddress.substring(1)) + ":" + info.portNumber);
 		}
 		System.out.println();
 	}
@@ -153,13 +153,13 @@ public class Registry implements Node{
 	public void listWeights() throws IOException
 	{
 		if(!this.linksSetUp)
-		{
+		{			
 			setupOverlay(4);
 		}
 		for(int x = 0; x < overlayConnections.size(); x++)
 		{
 			NodesWithLink info = overlayConnections.get(x);
-			System.out.println(info.getFirstNode().ipAddress + ":" + info.getFirstNode().serverSocketPortNumber + " " + info.getSecondNode().ipAddress + ":" + info.getSecondNode().serverSocketPortNumber + " " + info.getWeight());
+			System.out.println(addressToName.get(info.getFirstNode().ipAddress.substring(1)) + ":" + info.getFirstNode().serverSocketPortNumber + " " + addressToName.get(info.getSecondNode().ipAddress.substring(1)) + ":" + info.getSecondNode().serverSocketPortNumber + " " + info.getWeight());
 		}
 		System.out.println();
 	}

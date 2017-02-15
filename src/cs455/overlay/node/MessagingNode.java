@@ -403,7 +403,7 @@ public class MessagingNode implements Node{
 					if(nwd.nodeAddress.equals(current.name) && nwd.nodePortNumber == current.portNumber)
 					{
 						pathWithHyphens = addressToName.get(parent.name) + ":" + parent.portNumber + "--" + nwd.linkWeight + "--" + pathWithHyphens;
-						System.out.println(pathWithHyphens);
+						//System.out.println(pathWithHyphens);
 					}
 				}
 				current = current.getParent();
