@@ -368,7 +368,7 @@ public class TCPReceiver implements Runnable {
 					if(this.registry.numberOfCompletedNodes == this.registry.connectedNodes.size())
 					{
 						//send PULL_TRAFFIC_SUMMARY message
-						Thread.sleep(20000);
+						Thread.sleep(15000);
 						this.registry.sendPullTrafficMessage();
 					}
 				}
