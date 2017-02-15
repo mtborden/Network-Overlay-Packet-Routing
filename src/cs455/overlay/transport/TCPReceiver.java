@@ -131,7 +131,6 @@ public class TCPReceiver implements Runnable {
 				else
 				{					
 					this.registry.connectedNodes.add(newNode);
-					System.out.println(senderIPAddress);
 					this.registry.addressToName.put(senderIPAddress, InetAddress.getByName(senderIPAddress.substring(1)).getHostName());
 					System.out.println("Request accepted. There are now " + this.registry.connectedNodes.size() + " nodes connected.\n");
 					byte[] responseArray = getBytesForRegistrationResponse(SUCCESS, null);

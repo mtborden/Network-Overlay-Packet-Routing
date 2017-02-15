@@ -3,6 +3,7 @@ package cs455.overlay.node;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -58,6 +59,8 @@ public class MessagingNode implements Node{
 	private boolean disconnect;
 	private boolean exited;
 	private ArrayList<String> pathsToBePrinted;
+	private boolean receivedConnections;
+	private HashMap<String, String> addressToName;
 	
 	/**
 	 * Constructor for MessagingNode. Sets up socket with the registry, and starts that thread, starts up server socket and starts listening for incoming connections. Automatically registers with the registry
@@ -110,6 +113,8 @@ public class MessagingNode implements Node{
 		this.disconnect = false;
 		this.exited = false;
 		this.pathsToBePrinted = new ArrayList<>();
+		this.receivedConnections = false;
+		this.addressToName = new HashMap<>();
 	}
 	
 	@Override
@@ -151,7 +156,7 @@ public class MessagingNode implements Node{
 	 */
 	public void exitOverlay() throws IOException
 	{
-		if(!exited)
+		if(!exited && !receivedConnections)
 		{
 			Deregister deregister = new Deregister(socketWithRegistry.getLocalAddress().toString(), socketWithRegistry.getLocalPort(), this.listeningPort);
 			byte[] registrationInfo = deregister.getBytes();
@@ -160,7 +165,14 @@ public class MessagingNode implements Node{
 		}
 		else
 		{
-			System.out.println("This messaging node has already exited the overlay.");
+			if(exited)
+			{
+				System.out.println("This messaging node has already exited the overlay.");
+			}
+			if(receivedConnections)
+			{
+				System.out.println("Connections have already been received, node cannot exit the overlay.");
+			}
 		}
 	}
 	
@@ -267,6 +279,8 @@ public class MessagingNode implements Node{
 	{
 		int counter = 65;
 		
+		receivedConnections = true;
+		
 		for(int x = 0; x < linksArray.length; x++)
 		{
 			int linkNum = x+1;
@@ -276,6 +290,10 @@ public class MessagingNode implements Node{
 			String node1 = linkArray[0];
 			String[] node1Array = node1.split(":");
 			String node1Name = node1Array[0];
+			if(addressToName.get(node1Name) != null)
+			{
+				addressToName.put(node1Name, InetAddress.getByName(node1Name.substring(1)).getHostName());
+			}
 			int node1Port = Integer.parseInt(node1Array[1]);
 			String node2 = linkArray[1];
 			String[] node2Array = node2.split(":");
@@ -375,7 +393,7 @@ public class MessagingNode implements Node{
 			DijkstraNode current = destinationNode;
 			DijkstraNode parent = current.getParent();
 			String path = "";
-			String pathWithHyphens = current.name + ":" + current.portNumber;
+			String pathWithHyphens = addressToName.get(current.name) + ":" + current.portNumber;
 			while(!current.equals(sourceNode))
 			{
 				path = addressToAlias.get(current.toString()) + path;
@@ -384,11 +402,12 @@ public class MessagingNode implements Node{
 					NodeWithDistance nwd = parent.connections.get(y);
 					if(nwd.nodeAddress.equals(current.name) && nwd.nodePortNumber == current.portNumber)
 					{
-						pathWithHyphens = parent.name + ":" + parent.portNumber + "--" + nwd.linkWeight + "--" + pathWithHyphens;
+						pathWithHyphens = addressToName.get(parent.name) + ":" + parent.portNumber + "--" + nwd.linkWeight + "--" + pathWithHyphens;
 						System.out.println(pathWithHyphens);
 					}
 				}
 				current = current.getParent();
+				parent = current.getParent();
 			}
 			//System.out.println(path + " " + destinationNode.distanceFromSource);
 			pathsToBePrinted.add(pathWithHyphens);
