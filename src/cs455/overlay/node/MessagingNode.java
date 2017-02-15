@@ -290,7 +290,7 @@ public class MessagingNode implements Node{
 			String node1 = linkArray[0];
 			String[] node1Array = node1.split(":");
 			String node1Name = node1Array[0];
-			if(addressToName.get(node1Name) != null)
+			if(addressToName.get(node1Name) == null)
 			{
 				addressToName.put(node1Name, InetAddress.getByName(node1Name.substring(1)).getHostName());
 			}
