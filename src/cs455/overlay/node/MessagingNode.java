@@ -69,7 +69,7 @@ public class MessagingNode implements Node{
 	public MessagingNode(String hostName, int portNumber) throws UnknownHostException, IOException
 	{
 		this.socketWithRegistry = new Socket(hostName, portNumber);
-		this.ipAddress = socketWithRegistry.getLocalAddress().getHostName().toString();
+		this.ipAddress = socketWithRegistry.getLocalAddress().toString();
 		this.port = socketWithRegistry.getLocalPort();
 		this.protocol = new Protocol();
 		senderToRegistry = new TCPSender(socketWithRegistry);
@@ -85,7 +85,7 @@ public class MessagingNode implements Node{
 		this.listeningPort = serverSocket.getLocalPort();
 		System.out.println("Messaging node listening on port " + listeningPort);
 		
-		Register register = new Register(socketWithRegistry.getLocalAddress().getHostName().toString(), socketWithRegistry.getLocalPort(), listeningPort);
+		Register register = new Register(socketWithRegistry.getLocalAddress().toString(), socketWithRegistry.getLocalPort(), listeningPort);
 		byte[] registrationInfo = register.getBytes();
 		senderToRegistry.sendData(registrationInfo);
 		
@@ -153,7 +153,7 @@ public class MessagingNode implements Node{
 	{
 		if(!exited)
 		{
-			Deregister deregister = new Deregister(socketWithRegistry.getLocalAddress().getHostName().toString(), socketWithRegistry.getLocalPort(), this.listeningPort);
+			Deregister deregister = new Deregister(socketWithRegistry.getLocalAddress().toString(), socketWithRegistry.getLocalPort(), this.listeningPort);
 			byte[] registrationInfo = deregister.getBytes();
 			senderToRegistry.sendData(registrationInfo);
 			exited = true;
@@ -522,7 +522,7 @@ public class MessagingNode implements Node{
 	 */
 	public boolean equals(String address, int portNumber)
 	{
-		if(this.socketWithRegistry.getLocalAddress().getHostName().toString().equals(address) && this.socketWithRegistry.getLocalPort() == portNumber)
+		if(this.socketWithRegistry.getLocalAddress().toString().equals(address) && this.socketWithRegistry.getLocalPort() == portNumber)
 		{
 			return true;
 		}

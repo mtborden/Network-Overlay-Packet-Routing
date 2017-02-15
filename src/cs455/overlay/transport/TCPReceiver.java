@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -130,6 +131,7 @@ public class TCPReceiver implements Runnable {
 				else
 				{					
 					this.registry.connectedNodes.add(newNode);
+					this.registry.addressToName.put(senderIPAddress, InetAddress.getByName(senderIPAddress).getHostName());
 					System.out.println("Request accepted. There are now " + this.registry.connectedNodes.size() + " nodes connected.\n");
 					byte[] responseArray = getBytesForRegistrationResponse(SUCCESS, null);
 					this.registry.sendResponse(responseArray, this.socket);

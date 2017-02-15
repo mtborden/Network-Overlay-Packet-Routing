@@ -36,6 +36,7 @@ public class Registry implements Node{
 	public ArrayList<NodeSummation> summations;
 	private boolean linksSetUp;
 	public HashMap<Socket, Thread> socketToThread;
+	public HashMap<String, String> addressToName;
 	
 	public Registry(int portNumber)
 	{
@@ -53,6 +54,7 @@ public class Registry implements Node{
 		this.summations = new ArrayList<>();
 		this.linksSetUp = false;
 		this.socketToThread = new HashMap<>();
+		this.addressToName = new HashMap<>();
 	}
 	
 	@Override
