@@ -159,7 +159,7 @@ public class Registry implements Node{
 		for(int x = 0; x < overlayConnections.size(); x++)
 		{
 			NodesWithLink info = overlayConnections.get(x);
-			System.out.println(addressToName.get(info.getFirstNode().ipAddress + ":" + info.getFirstNode().serverSocketPortNumber + " " + addressToName.get(info.getSecondNode().ipAddress + ":" + info.getSecondNode().serverSocketPortNumber + " " + info.getWeight());
+			System.out.println(addressToName.get(info.getFirstNode().ipAddress) + ":" + info.getFirstNode().serverSocketPortNumber + " " + addressToName.get(info.getSecondNode().ipAddress) + ":" + info.getSecondNode().serverSocketPortNumber + " " + info.getWeight());
 		}
 		System.out.println();
 	}
